@@ -122,3 +122,11 @@ Not: Veriler her cihazın kendi tarayıcısında tutulur; cihazlar arası eşitl
 ## Uygulama içi hatırlatıcı
 - `src/js/hatirlatici.js` — uygulama açıkken saatli ek görevler (SMS zamanında) ve ajandadaki saatli
   etkinlikler (15 dk önce) için ekranda uyarı + titreşim; “5 dk ertele”. Bildirim izni verilirse arka planda telefon bildirimi.
+
+## Vardiya bildirimi (her gün 06.00 ve 16.00)
+- `.github/workflows/vardiya-bildirimi.yml`: GitHub Actions zamanlayıcısı (03.00 ve 13.00 UTC) telefona Web Push sinyali gönderir;
+  yük yalnızca `{"tur":"vardiya","zaman":"sabah|aksam"}` — isim içermez.
+- Telefon (sw.js) sinyali alınca vardiya listesini cihazdaki önbellekten (`14kat-veri`) okuyup bildirimi oluşturur.
+- Kurulum: Ayarlar → Vardiya bildirimleri → Etkinleştir → anahtarı kopyala → GitHub → Settings → Secrets → Actions → `PUSH_AYAR`.
+  Anahtar (VAPID + abonelik) telefonda üretilir; sohbet veya depo üzerinden geçmez.
+- GitHub zamanlanmış işleri birkaç dakika gecikebilir. Ayda bir canlılık kaydıyla iş kendiliğinden kapanmaz.

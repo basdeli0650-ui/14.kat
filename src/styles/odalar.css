@@ -38,3 +38,8 @@
 .ht-baslik { font-weight: var(--kalinlik-kalin); }
 .ht-metin { font-size: var(--yazi-sm); color: var(--renk-metin-ikincil); }
 .ht-eylem { display: flex; flex-wrap: wrap; gap: var(--b-2); margin-top: var(--b-3); }
+
+/* Vardiya bildirimi kurulum adımları */
+.ps-adim { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: var(--b-3); font-size: var(--yazi-sm); }
+.ps-adim li > span { display: block; margin-bottom: 6px; color: var(--renk-metin-ikincil); }
+.ps-adim code, .kart code { background: var(--renk-yuzey-3); padding: 1px 6px; border-radius: 6px; color: var(--renk-altin); font-size: 0.95em; }

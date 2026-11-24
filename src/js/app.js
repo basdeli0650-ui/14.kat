@@ -238,6 +238,7 @@
     git();
     window.addEventListener('hashchange', git);
     if (window.Hatirlatici) window.Hatirlatici.baslat();
+    try { window.VardiyaEkrani.aynala(); } catch (e) { /* */ }
     if (window.Kilit) {
       window.Kilit.izle();
       ['kilitle', 'kilitle-ust'].forEach(id => { const kb = document.getElementById(id); if (kb) kb.addEventListener('click', () => window.Kilit.kilitle()); });

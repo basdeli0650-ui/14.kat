@@ -20,7 +20,17 @@
     try { const s = localStorage.getItem(ANAHTAR); veri = s ? JSON.parse(s) : null; } catch (e) { veri = null; }
     if (!veri || veri.surum !== 1) veri = JSON.parse(JSON.stringify(TOHUM));
   }
-  function kaydet() { try { localStorage.setItem(ANAHTAR, JSON.stringify(veri)); } catch (e) { /* saklama yoksa bellekte devam */ } }
+  function kaydet() { try { localStorage.setItem(ANAHTAR, JSON.stringify(veri)); } catch (e) { /* saklama yoksa bellekte devam */ } aynala(); }
+  /* Bildirim için: personel + son 3 / gelecek 3 hafta, yalnızca bu cihazın önbelleğine */
+  function aynala() {
+    try {
+      if (!('caches' in window) || !veri) return;
+      const pzt = pazartesi(bugunIso()), haftalar = {};
+      for (let n = -3; n <= 3; n++) { const k = gunEkle(pzt, n * 7); if (veri.haftalar[k]) haftalar[k] = veri.haftalar[k]; }
+      const govde = JSON.stringify({ personel: veri.personel.map(p => ({ id: p.id, ad: p.ad })), haftalar });
+      caches.open('14kat-veri').then(c => c.put('veri/vardiya.json', new Response(govde, { headers: { 'Content-Type': 'application/json' } }))).catch(() => {});
+    } catch (e) { /* */ }
+  }
 
   /* ---------- Tarih yardımcıları (YYYY-AA-GG, haftanın pazartesisi) ---------- */
   const gunEkle = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -371,5 +381,5 @@
     };
   }
 
-  window.VardiyaEkrani = { ciz, bagla, vardiyadakiler, personel, ozet, gelecekHaftaTaslagi, goster: (pzt) => { aktif = pzt; } };
+  window.VardiyaEkrani = { aynala: () => { if (!veri) yukle(); aynala(); }, ciz, bagla, vardiyadakiler, personel, ozet, gelecekHaftaTaslagi, goster: (pzt) => { aktif = pzt; } };
 })();

@@ -6,8 +6,64 @@
   'use strict';
   const ON_EK = '14kat.';
   const AYAR = '14kat.ayar.v1';
-  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme', '14kat.hatirlatma.v1']; // yedeğe girmez, geri yüklemede silinmez
+  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme', '14kat.hatirlatma.v1', '14kat.push.v1']; // yedeğe girmez, geri yüklemede silinmez
   let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' }, pinMesaj = null, denemeMesaj = '';
+  let pushMesaj = '', pushKopya = false, pushDurum = null; // null: bilinmiyor, 'yok', 'kapali', 'acik'
+
+  /* ---------- Vardiya bildirimi (Web Push) ---------- */
+  const PUSH = '14kat.push.v1';
+  const b64url = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const depo = () => { const h = location.hostname, y = location.pathname.split('/').filter(Boolean)[0]; return h.endsWith('.github.io') && y ? { sahip: h.split('.')[0], ad: y } : null; };
+  function pushAyar() { try { return JSON.parse(localStorage.getItem(PUSH)); } catch (e) { return null; } }
+  async function pushKontrol() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !(window.crypto && crypto.subtle)) return 'yok';
+    try {
+      const r = await navigator.serviceWorker.getRegistration(); if (!r) return 'yok';
+      const sub = await r.pushManager.getSubscription(), a = pushAyar();
+      return sub && a && a.abonelik && a.abonelik.endpoint === sub.endpoint ? 'acik' : 'kapali';
+    } catch (e) { return 'yok'; }
+  }
+  async function pushEtkinlestir() {
+    const izin = await Notification.requestPermission();
+    if (izin !== 'granted') throw new Error('Bildirim izni verilmedi.');
+    const r = await navigator.serviceWorker.ready;
+    const eski = await r.pushManager.getSubscription(); if (eski) await eski.unsubscribe();
+    const anahtar = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign']);
+    const acik = await crypto.subtle.exportKey('raw', anahtar.publicKey);
+    const ozel = (await crypto.subtle.exportKey('jwk', anahtar.privateKey)).d;
+    const sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: new Uint8Array(acik) });
+    const j = sub.toJSON();
+    localStorage.setItem(PUSH, JSON.stringify({ abonelik: { endpoint: j.endpoint, keys: j.keys }, vapid: { acik: b64url(acik), ozel } }));
+  }
+  function pushKarti() {
+    const a = pushAyar(), d = depo();
+    const gizliLink = d ? `https://github.com/${d.sahip}/${d.ad}/settings/secrets/actions/new` : 'GitHub → depo → Settings → Secrets and variables → Actions → New repository secret';
+    const isLink = d ? `https://github.com/${d.sahip}/${d.ad}/actions/workflows/vardiya-bildirimi.yml` : 'GitHub → depo → Actions → Vardiya bildirimi';
+    const lnk = (u, t) => u.startsWith('http') ? `<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>` : esc(u);
+    let govde;
+    if (pushDurum === null) govde = '<p class="metin-sm metin-soluk">Kontrol ediliyor…</p>';
+    else if (pushDurum === 'yok') govde = `<p class="metin-sm metin-ikincil">Bu tarayıcı veya mod arka plan bildirimini desteklemiyor. Uygulamayı Chrome'dan “Uygulamayı yükle” ile kurup ana ekrandan açın.</p>`;
+    else if (pushDurum === 'kapali') govde = `<p class="metin-sm metin-ikincil">Her gün <strong>06.00</strong>'da bugünün, <strong>16.00</strong>'da bu gecenin ve yarın gündüzün ekibi bildirim olarak gelir; uygulama kapalıyken de. İsimler sunucuya gönderilmez, telefondaki listeden okunur.</p>
+        <div class="vrd-eylemler" style="margin-top:12px"><button class="btn btn-birincil btn-sm" type="button" data-push-ac>${i('zil', 'ikon-sm')}Etkinleştir</button></div>`;
+    else govde = `
+        <ol class="ps-adim">
+          <li><span>Anahtarı kopyalayın.</span>
+            <button class="btn ${pushKopya ? 'btn-ikincil' : 'btn-birincil'} btn-sm" type="button" data-push-kopya>${i('gonder', 'ikon-sm')}${pushKopya ? 'Kopyalandı' : 'Anahtarı kopyala'}</button></li>
+          <li><span>${lnk(gizliLink, 'GitHub gizli anahtar sayfası')} açılır. <strong>Name</strong>: <code>PUSH_AYAR</code> · <strong>Secret</strong>: yapıştırın · <strong>Add secret</strong>.</span></li>
+          <li><span>Denemek için ${lnk(isLink, 'Vardiya bildirimi')} sayfasında <strong>Run workflow</strong> → <strong>Run workflow</strong>. 1–2 dakika içinde bildirim gelir.</span></li>
+        </ol>
+        <div class="vrd-eylemler" style="margin-top:12px">
+          <button class="btn btn-ikincil btn-sm" type="button" data-push-dene="sabah">Telefonda dene: 06.00</button>
+          <button class="btn btn-ikincil btn-sm" type="button" data-push-dene="aksam">Telefonda dene: 16.00</button>
+          <button class="btn btn-hayalet btn-sm" type="button" data-push-ac>Anahtarı yenile</button>
+        </div>
+        <p class="alan__ipucu" style="margin-top:8px">Anahtar yalnızca bu telefona bildirim göndermeye yarar; kimseyle paylaşmayın. “Anahtarı yenile” derseniz GitHub'daki <code>PUSH_AYAR</code>'ı da güncelleyin.</p>`;
+    return `<section class="kart">
+      <div class="kart__bas"><h2 class="kart__baslik">${i('vardiya')}Vardiya bildirimleri · 06.00 / 16.00</h2>
+        <span class="rozet ${pushDurum === 'acik' ? 'rozet-basari' : 'rozet-notr'}">${pushDurum === 'acik' ? 'Telefon hazır' : 'Kapalı'}</span></div>
+      <div class="kart__govde">${govde}${pushMesaj ? `<p class="alan__hata" role="alert" style="margin-top:8px">${i('uyari', 'ikon-sm')}${esc(pushMesaj)}</p>` : ''}</div>
+    </section>`;
+  }
 
   const i = (a, s = '') => `<svg class="ikon ${s}" aria-hidden="true"><use href="#i-${a}"/></svg>`;
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -67,6 +123,8 @@
         </div>
       </section>
 
+      ${pushKarti()}
+
       <section class="kart">
         <div class="kart__bas"><h2 class="kart__baslik">${i('zil')}Hatırlatmalar</h2>
           <span class="rozet ${bd === 'granted' ? 'rozet-basari' : 'rozet-notr'}">${bd === 'granted' ? 'Bildirim açık' : bd === 'denied' ? 'Bildirim engelli' : bd === 'yok' ? 'Desteklenmiyor' : 'Bildirim kapalı'}</span></div>
@@ -94,8 +152,24 @@
   function yenile(odak) { const el = document.getElementById('icerik'); el.innerHTML = ciz(); bagla(el); if (odak) { const o = el.querySelector(odak); if (o) o.focus(); } }
 
   function bagla(el) {
+    if (pushDurum === null) pushKontrol().then(d => { pushDurum = d; if (location.hash === '#ayarlar') yenile(); });
+    const pa = el.querySelectorAll('[data-push-ac]');
+    pa.forEach(b => b.addEventListener('click', async () => {
+      b.disabled = true; pushMesaj = '';
+      try { await pushEtkinlestir(); pushDurum = 'acik'; pushKopya = false; } catch (e) { pushMesaj = e.message || 'Etkinleştirilemedi.'; }
+      yenile('[data-push-kopya]');
+    }));
+    const pk = el.querySelector('[data-push-kopya]');
+    if (pk) pk.addEventListener('click', () => {
+      const t = localStorage.getItem(PUSH) || '';
+      const bitti = (ok) => { pushKopya = ok; pushMesaj = ok ? '' : 'Kopyalanamadı.'; yenile('[data-push-kopya]'); };
+      try { navigator.clipboard.writeText(t).then(() => bitti(true), () => bitti(false)); } catch (e) { bitti(false); }
+    });
+    el.querySelectorAll('[data-push-dene]').forEach(b => b.addEventListener('click', async () => {
+      try { window.VardiyaEkrani.aynala(); const r = await navigator.serviceWorker.ready; setTimeout(() => r.active.postMessage({ tur: 'vardiya-deneme', zaman: b.dataset.pushDene }), 300); } catch (e) { pushMesaj = 'Deneme bildirimi gösterilemedi.'; yenile(); }
+    }));
     const sb = el.querySelector('#surum-bilgi');
-    if (sb) { try { caches.keys().then(k => { const v = k.filter(x => x.startsWith('14kat-')).sort().pop(); sb.textContent = v ? 'önbellek ' + v.replace('14kat-', '') : 'önbellek yok (tarayıcı modu)'; }).catch(() => { sb.textContent = '—'; }); } catch (e) { sb.textContent = '—'; } }
+    if (sb) { try { caches.keys().then(k => { const v = k.filter(x => /^14kat-v\d+$/.test(x)).sort((a, b) => parseInt(a.slice(7)) - parseInt(b.slice(7))).pop(); sb.textContent = v ? 'önbellek ' + v.replace('14kat-', '') : 'önbellek yok (tarayıcı modu)'; }).catch(() => { sb.textContent = '—'; }); } catch (e) { sb.textContent = '—'; } }
     const gb = el.querySelector('[data-guncelle]');
     if (gb) gb.addEventListener('click', async () => {
       gb.disabled = true; gb.lastChild.textContent = 'Kontrol ediliyor…';

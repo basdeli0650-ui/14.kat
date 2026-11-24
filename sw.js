@@ -1,6 +1,6 @@
 /* 14. KAT — çevrimdışı çalışma için önbellek (service worker)
    Dosya değiştiğinde SURUM'ü artırın. */
-const SURUM = '14kat-v8';
+const SURUM = '14kat-v9';
 const DOSYALAR = [
   "./",
   "index.html",
@@ -52,7 +52,7 @@ self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(SURUM).then((c) => c.addAll(DOSYALAR)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((x) => x !== SURUM).map((x) => caches.delete(x)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((k) => Promise.all(k.filter((x) => /^14kat-v\d+$/.test(x) && x !== SURUM).map((x) => caches.delete(x)))).then(() => self.clients.claim()));
 });
 /* Önce ağ, olmazsa önbellek: güncelleme hemen gelir, internet yoksa uygulama yine açılır */
 self.addEventListener('fetch', (e) => {
@@ -63,11 +63,50 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
+/* ---------- Vardiya bildirimi (06.00 / 16.00) ----------
+   Sunucudan yalnızca {tur:'vardiya', zaman:'sabah'|'aksam'} gelir; isimler telefondaki kayıttan okunur. */
+const VERI = '14kat-veri';
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function kimler(v, tarih, kod) {
+  const d = new Date(tarih + 'T12:00:00'), gun = (d.getDay() + 6) % 7;
+  const pzt = new Date(d); pzt.setDate(d.getDate() - gun);
+  const h = (v.haftalar || {})[iso(pzt)] || {};
+  return (v.personel || []).filter((p) => (h[p.id] || [])[gun] === kod).map((p) => { const s = p.ad.split(' '); return s.length > 1 ? `${s[0]} ${s[s.length - 1][0]}.` : s[0]; });
+}
+async function vardiyaBildirimi(zaman) {
+  let v = null;
+  try { const r = await caches.match('veri/vardiya.json', { cacheName: VERI }); if (r) v = await r.json(); } catch (e) { /* */ }
+  const bugun = new Date(), yarin = new Date(); yarin.setDate(bugun.getDate() + 1);
+  const liste = (a) => a.length ? a.join(', ') : 'planlanmamış';
+  let baslik, metin;
+  if (!v || !(v.personel || []).length) { baslik = '14. Kat · Vardiya'; metin = 'Vardiya planı bu cihazda bulunamadı. Uygulamayı açıp kontrol edin.'; }
+  else if (zaman === 'aksam') {
+    baslik = 'Bu gecenin vardiyası';
+    metin = `Gece 20.00–08.00: ${liste(kimler(v, iso(bugun), 'N'))}\nYarın gündüz: ${liste(kimler(v, iso(yarin), 'G'))}`;
+  } else {
+    baslik = 'Bugünün vardiyası';
+    metin = `Gündüz 08.00–20.00: ${liste(kimler(v, iso(bugun), 'G'))}\nGece 20.00–08.00: ${liste(kimler(v, iso(bugun), 'N'))}`;
+  }
+  return self.registration.showNotification(baslik, {
+    body: metin, icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/bildirim-simge-96.png',
+    tag: 'vardiya-' + zaman, renotify: true, vibrate: [200, 100, 200], data: { url: 'panel.html#vardiya' }
+  });
+}
+self.addEventListener('push', (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { /* */ }
+  const zaman = d.zaman || (new Date().getHours() < 12 ? 'sabah' : 'aksam');
+  e.waitUntil(vardiyaBildirimi(zaman));
+});
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.tur === 'vardiya-deneme') e.waitUntil(vardiyaBildirimi(e.data.zaman || 'sabah'));
+});
+
 /* Bildirime dokununca uygulamayı öne getir / aç */
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || 'panel.html';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((l) => {
-    for (const c of l) { if ('focus' in c) return c.focus(); }
-    return self.clients.openWindow('panel.html');
+    for (const c of l) { if ('focus' in c) { if ('navigate' in c && url.includes('#')) c.navigate(url).catch(() => {}); return c.focus(); } }
+    return self.clients.openWindow(url);
   }));
 });
