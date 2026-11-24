@@ -111,7 +111,7 @@
           <div class="vrd-eylemler" style="margin-top:16px">
             <button class="btn btn-birincil" type="button" data-yedekle>${i('stok')}Yedek dosyası indir</button>
             <label class="btn btn-ikincil" for="yedek-dosya">${i('arti')}Yedekten geri yükle</label>
-            <input id="yedek-dosya" class="sr-only" type="file" accept="application/json,.json" data-geri>
+            <input id="yedek-dosya" class="sr-only" type="file" data-geri>
           </div>
           ${b ? `<div class="uyari uyari-uyari" role="alertdialog" aria-label="Geri yükleme onayı" style="margin-top:16px">${i('uyari')}<div>
               <div class="uyari__baslik">${esc(durum.dosyaAd)} · ${b.tarih ? trTarih(b.tarih) : 'tarih yok'} tarihli yedek</div>
@@ -235,7 +235,7 @@
           if (!Object.keys(temiz).length) throw new Error('boş');
           durum = { mesaj: '', tur: '', bekleyen: { tarih: j.tarih, veri: temiz, secili: Object.keys(temiz) }, dosyaAd: f.name };
           yenile('[data-geri-hayir]');
-        } catch (e) { durum = { mesaj: 'Bu dosya bir 14. Kat yedeği değil veya bozuk.', tur: 'kritik', bekleyen: null }; yenile(); }
+        } catch (e) { durum = { mesaj: `“${f.name}” bir 14. Kat yedeği değil veya eksik indirilmiş. Dosyayı yeniden indirip tekrar deneyin.`, tur: 'kritik', bekleyen: null }; yenile(); }
       };
       r.readAsText(f);
     });
