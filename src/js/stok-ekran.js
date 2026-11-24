@@ -317,5 +317,5 @@
     };
   }
 
-  window.StokEkrani = { ciz, bagla, ozet, analiz };
+  window.StokEkrani = { ciz, bagla, ozet, analiz, siparisGunu: () => { if (!veri) yukle(); return veri.siparisGunu; } };
 })();

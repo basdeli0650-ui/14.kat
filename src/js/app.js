@@ -59,7 +59,34 @@
     return u.slice(0, 7);
   }
 
-  window.Kat14 = { dikkat };
+  /* Arka plan bildirimleri için cihaz içi özet (sw.js okur; isim içermez) */
+  const isoGun = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  function durumAynala() {
+    try {
+      if (!('caches' in window)) return;
+      const b = new Date(), dun = new Date(); dun.setDate(b.getDate() - 1);
+      const M = window.MiatEkrani, st = window.StokEkrani.ozet();
+      const olcum = {}; [[isoGun(dun), 'N'], [isoGun(b), 'G'], [isoGun(b), 'N']].forEach(([t, v]) => { olcum[`${t}|${v}`] = !!M.olcumTamam(t, v); });
+      let ayar = {}, tercih = {}; try { ayar = JSON.parse(localStorage.getItem('14kat.ayar.v1')) || {}; tercih = JSON.parse(localStorage.getItem('14kat.bildirimTercih')) || {}; } catch (e) { /* */ }
+      const govde = JSON.stringify({
+        guncel: Date.now(), tercih, olcum, olcumNoktasi: M.noktaAdlari().length,
+        siparisGunu: window.StokEkrani.siparisGunu(), kritikStok: st.kritik, acilKritik: st.acilKritik.length,
+        kontrolBekleyen: M.ozet().kontrolBekleyen.length, sonYedek: ayar.sonYedek || '', veriVar: window.AyarlarEkrani.veriVar()
+      });
+      caches.open('14kat-veri').then(c => c.put('veri/durum.json', new Response(govde, { headers: { 'Content-Type': 'application/json' } }))).catch(() => {});
+    } catch (e) { /* */ }
+  }
+  /* Herhangi bir 14kat kaydı değişince özeti (0,5 sn sonra) yenile */
+  let aynaZaman;
+  try {
+    const orijinal = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      orijinal.call(this, k, v);
+      if (this === window.localStorage && String(k).startsWith('14kat.') && k !== '14kat.hatirlatma.v1') { clearTimeout(aynaZaman); aynaZaman = setTimeout(durumAynala, 500); }
+    };
+  } catch (e) { /* */ }
+
+  window.Kat14 = { dikkat, durumAynala };
 
   /* ---------------- Modüller ---------------- */
   const moduller = {
@@ -238,7 +265,7 @@
     git();
     window.addEventListener('hashchange', git);
     if (window.Hatirlatici) window.Hatirlatici.baslat();
-    try { window.VardiyaEkrani.aynala(); } catch (e) { /* */ }
+    try { window.VardiyaEkrani.aynala(); durumAynala(); } catch (e) { /* */ }
     if (window.Kilit) {
       window.Kilit.izle();
       ['kilitle', 'kilitle-ust'].forEach(id => { const kb = document.getElementById(id); if (kb) kb.addEventListener('click', () => window.Kilit.kilitle()); });

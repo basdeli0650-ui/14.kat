@@ -6,7 +6,7 @@
   'use strict';
   const ON_EK = '14kat.';
   const AYAR = '14kat.ayar.v1';
-  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme', '14kat.hatirlatma.v1', '14kat.push.v1']; // yedeğe girmez, geri yüklemede silinmez
+  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme', '14kat.hatirlatma.v1', '14kat.push.v1', '14kat.bildirimTercih']; // yedeğe girmez, geri yüklemede silinmez
   let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' }, pinMesaj = null, denemeMesaj = '';
   let pushMesaj = '', pushKopya = false, pushDurum = null; // null: bilinmiyor, 'yok', 'kapali', 'acik'
 
@@ -35,6 +35,16 @@
     const j = sub.toJSON();
     localStorage.setItem(PUSH, JSON.stringify({ abonelik: { endpoint: j.endpoint, keys: j.keys }, vapid: { acik: b64url(acik), ozel } }));
   }
+  const TERCIH = '14kat.bildirimTercih';
+  const TERCIHLER = [['vardiya', 'Vardiya ekibi', '06.00 ve 16.00'], ['sicaklik', 'Sıcaklık ölçümü girilmediyse', '08.30 ve 20.30'],
+    ['siparis', 'Sipariş günü, aylık kontroller, acil arabası eksiği', '06.00'], ['yedek', 'Yedek hatırlatması', 'Cuma 06.00, 7 günde bir']];
+  function tercihOku() { try { return JSON.parse(localStorage.getItem(TERCIH)) || {}; } catch (e) { return {}; } }
+  function tercihKutulari() {
+    const t = tercihOku();
+    return `<fieldset class="od-riskler ps-tercih"><legend class="alan__etiket">Hangi bildirimler gelsin?</legend>
+      ${TERCIHLER.map(([k, ad, saat]) => `<label class="onay"><input type="checkbox" data-tercih="${k}"${t[k] !== false ? ' checked' : ''}> <span>${ad} <span class="metin-xs metin-soluk">· ${saat}</span></span></label>`).join('')}
+    </fieldset>`;
+  }
   function pushKarti() {
     const a = pushAyar(), d = depo();
     const gizliLink = d ? `https://github.com/${d.sahip}/${d.ad}/settings/secrets/actions/new` : 'GitHub → depo → Settings → Secrets and variables → Actions → New repository secret';
@@ -43,7 +53,7 @@
     let govde;
     if (pushDurum === null) govde = '<p class="metin-sm metin-soluk">Kontrol ediliyor…</p>';
     else if (pushDurum === 'yok') govde = `<p class="metin-sm metin-ikincil">Bu tarayıcı veya mod arka plan bildirimini desteklemiyor. Uygulamayı Chrome'dan “Uygulamayı yükle” ile kurup ana ekrandan açın.</p>`;
-    else if (pushDurum === 'kapali') govde = `<p class="metin-sm metin-ikincil">Her gün <strong>06.00</strong>'da bugünün, <strong>16.00</strong>'da bu gecenin ve yarın gündüzün ekibi bildirim olarak gelir; uygulama kapalıyken de. İsimler sunucuya gönderilmez, telefondaki listeden okunur.</p>
+    else if (pushDurum === 'kapali') govde = `<p class="metin-sm metin-ikincil">Uygulama kapalıyken de gelir: <strong>06.00</strong> bugünün ekibi ve sabah kontrolleri, <strong>08.30 / 20.30</strong> sıcaklık ölçümü girilmediyse uyarı, <strong>16.00</strong> bu gecenin ekibi. Sunucuya hiçbir kayıt gönderilmez; bildirimi telefon kendi verisinden hazırlar.</p>
         <div class="vrd-eylemler" style="margin-top:12px"><button class="btn btn-birincil btn-sm" type="button" data-push-ac>${i('zil', 'ikon-sm')}Etkinleştir</button></div>`;
     else govde = `
         <ol class="ps-adim">
@@ -55,11 +65,13 @@
         <div class="vrd-eylemler" style="margin-top:12px">
           <button class="btn btn-ikincil btn-sm" type="button" data-push-dene="sabah">Telefonda dene: 06.00</button>
           <button class="btn btn-ikincil btn-sm" type="button" data-push-dene="aksam">Telefonda dene: 16.00</button>
+          <button class="btn btn-ikincil btn-sm" type="button" data-push-dene="sicaklik-g">Telefonda dene: 08.30</button>
           <button class="btn btn-hayalet btn-sm" type="button" data-push-ac>Anahtarı yenile</button>
         </div>
+        ${tercihKutulari()}
         <p class="alan__ipucu" style="margin-top:8px">Anahtar yalnızca bu telefona bildirim göndermeye yarar; kimseyle paylaşmayın. “Anahtarı yenile” derseniz GitHub'daki <code>PUSH_AYAR</code>'ı da güncelleyin.</p>`;
     return `<section class="kart">
-      <div class="kart__bas"><h2 class="kart__baslik">${i('vardiya')}Vardiya bildirimleri · 06.00 / 16.00</h2>
+      <div class="kart__bas"><h2 class="kart__baslik">${i('vardiya')}Otomatik bildirimler</h2>
         <span class="rozet ${pushDurum === 'acik' ? 'rozet-basari' : 'rozet-notr'}">${pushDurum === 'acik' ? 'Telefon hazır' : 'Kapalı'}</span></div>
       <div class="kart__govde">${govde}${pushMesaj ? `<p class="alan__hata" role="alert" style="margin-top:8px">${i('uyari', 'ikon-sm')}${esc(pushMesaj)}</p>` : ''}</div>
     </section>`;
@@ -159,6 +171,9 @@
       try { await pushEtkinlestir(); pushDurum = 'acik'; pushKopya = false; } catch (e) { pushMesaj = e.message || 'Etkinleştirilemedi.'; }
       yenile('[data-push-kopya]');
     }));
+    el.querySelectorAll('[data-tercih]').forEach(c => c.addEventListener('change', () => {
+      const t = tercihOku(); t[c.dataset.tercih] = c.checked; localStorage.setItem(TERCIH, JSON.stringify(t));
+    }));
     const pk = el.querySelector('[data-push-kopya]');
     if (pk) pk.addEventListener('click', () => {
       const t = localStorage.getItem(PUSH) || '';
@@ -166,7 +181,7 @@
       try { navigator.clipboard.writeText(t).then(() => bitti(true), () => bitti(false)); } catch (e) { bitti(false); }
     });
     el.querySelectorAll('[data-push-dene]').forEach(b => b.addEventListener('click', async () => {
-      try { window.VardiyaEkrani.aynala(); const r = await navigator.serviceWorker.ready; setTimeout(() => r.active.postMessage({ tur: 'vardiya-deneme', zaman: b.dataset.pushDene }), 300); } catch (e) { pushMesaj = 'Deneme bildirimi gösterilemedi.'; yenile(); }
+      try { window.VardiyaEkrani.aynala(); window.Kat14.durumAynala(); const r = await navigator.serviceWorker.ready; setTimeout(() => r.active.postMessage({ tur: 'push-deneme', zaman: b.dataset.pushDene }), 300); } catch (e) { pushMesaj = 'Deneme bildirimi gösterilemedi.'; yenile(); }
     }));
     const sb = el.querySelector('#surum-bilgi');
     if (sb) { try { caches.keys().then(k => { const v = k.filter(x => /^14kat-v\d+$/.test(x)).sort((a, b) => parseInt(a.slice(7)) - parseInt(b.slice(7))).pop(); sb.textContent = v ? 'önbellek ' + v.replace('14kat-', '') : 'önbellek yok (tarayıcı modu)'; }).catch(() => { sb.textContent = '—'; }); } catch (e) { sb.textContent = '—'; } }

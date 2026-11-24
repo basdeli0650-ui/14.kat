@@ -316,5 +316,5 @@
   }
   function sonOlcumler() { if (!veri) yukle(); return veri.noktalar.map(n => { const o = sonOlcum(n.id); return { ad: n.ad, deger: o ? sayi(o.deger) + ' ' + n.birim : '—', dis: o ? disinda(n, o.deger) : false }; }); }
 
-  window.MiatEkrani = { ciz, bagla, ozet, olcumTamam, fefo, sonOlcumler };
+  window.MiatEkrani = { ciz, bagla, ozet, olcumTamam, fefo, sonOlcumler, noktaAdlari: () => { if (!veri) yukle(); return veri.noktalar.map(n => n.ad); } };
 })();

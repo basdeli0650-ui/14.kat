@@ -1,6 +1,6 @@
 /* 14. KAT — çevrimdışı çalışma için önbellek (service worker)
    Dosya değiştiğinde SURUM'ü artırın. */
-const SURUM = '14kat-v9';
+const SURUM = '14kat-v10';
 const DOSYALAR = [
   "./",
   "index.html",
@@ -92,13 +92,51 @@ async function vardiyaBildirimi(zaman) {
     tag: 'vardiya-' + zaman, renotify: true, vibrate: [200, 100, 200], data: { url: 'panel.html#vardiya' }
   });
 }
+async function durumOku() {
+  try { const r = await caches.match('veri/durum.json', { cacheName: VERI }); return r ? await r.json() : null; } catch (e) { return null; }
+}
+const SIMGE = { icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/bildirim-simge-96.png', vibrate: [200, 100, 200] };
+const goster = (baslik, body, tag, url) => self.registration.showNotification(baslik, { ...SIMGE, body, tag, renotify: true, data: { url } });
+const acikMi = (d, ad) => !d || !d.tercih || d.tercih[ad] !== false;
+
+async function sabahKontrolleri(d) {
+  if (!d) return;
+  const b = new Date(), isler = [];
+  if (acikMi(d, 'siparis') && b.getDay() === d.siparisGunu)
+    isler.push(goster('Bugün sipariş günü', d.kritikStok ? `${d.kritikStok} kalem kritik seviyede. Sipariş listesini hazırlayın.` : 'Haftalık sipariş listesini kontrol edin.', 'siparis', 'panel.html#stok'));
+  if (acikMi(d, 'siparis') && b.getDate() === 1)
+    isler.push(goster('Aylık kontroller', `Acil arabası sayımı ve dolapların miat kontrolü${d.kontrolBekleyen ? ` (${d.kontrolBekleyen} dolap bekliyor)` : ''}.`, 'aylik', 'panel.html#miat'));
+  if (acikMi(d, 'siparis') && d.acilKritik)
+    isler.push(goster('Acil arabası eksik', `${d.acilKritik} acil arabası malzemesi kritik seviyede.`, 'acil', 'panel.html#stok'));
+  if (acikMi(d, 'yedek') && b.getDay() === 5 && d.veriVar) {
+    const gun = d.sonYedek ? Math.round((Date.parse(iso(b)) - Date.parse(d.sonYedek)) / 864e5) : null;
+    if (gun == null || gun >= 7) isler.push(goster('Yedek alma zamanı', gun == null ? 'Henüz yedek alınmadı. Ayarlar → Yedek dosyası indir.' : `Son yedek ${gun} gün önce. Ayarlar → Yedek dosyası indir.`, 'yedek', 'panel.html#ayarlar'));
+  }
+  return Promise.all(isler);
+}
+async function sicaklikKontrolu(d, vardiya) {
+  if (!d || !acikMi(d, 'sicaklik') || !d.olcumNoktasi) return;
+  const anahtar = `${iso(new Date())}|${vardiya}`;
+  if (d.olcum && d.olcum[anahtar]) return; // ölçüm girilmiş
+  return goster('Dolap sıcaklığı ölçümü', `${vardiya === 'G' ? 'Gündüz' : 'Gece'} vardiyasının sıcaklık ve nem ölçümü henüz girilmedi.`, 'sicaklik-' + vardiya, 'panel.html#miat');
+}
+async function pushIsle(zaman) {
+  const d = await durumOku();
+  if (zaman === 'sicaklik-g') return sicaklikKontrolu(d, 'G');
+  if (zaman === 'sicaklik-n') return sicaklikKontrolu(d, 'N');
+  const isler = [];
+  if (acikMi(d, 'vardiya')) isler.push(vardiyaBildirimi(zaman === 'aksam' ? 'aksam' : 'sabah'));
+  if (zaman === 'sabah') isler.push(sabahKontrolleri(d));
+  return Promise.all(isler);
+}
 self.addEventListener('push', (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { /* */ }
   const zaman = d.zaman || (new Date().getHours() < 12 ? 'sabah' : 'aksam');
-  e.waitUntil(vardiyaBildirimi(zaman));
+  e.waitUntil(pushIsle(zaman));
 });
 self.addEventListener('message', (e) => {
   if (e.data && e.data.tur === 'vardiya-deneme') e.waitUntil(vardiyaBildirimi(e.data.zaman || 'sabah'));
+  if (e.data && e.data.tur === 'push-deneme') e.waitUntil(pushIsle(e.data.zaman));
 });
 
 /* Bildirime dokununca uygulamayı öne getir / aç */

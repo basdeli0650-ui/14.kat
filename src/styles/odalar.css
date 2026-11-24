@@ -43,3 +43,4 @@
 .ps-adim { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: var(--b-3); font-size: var(--yazi-sm); }
 .ps-adim li > span { display: block; margin-bottom: 6px; color: var(--renk-metin-ikincil); }
 .ps-adim code, .kart code { background: var(--renk-yuzey-3); padding: 1px 6px; border-radius: 6px; color: var(--renk-altin); font-size: 0.95em; }
+.ps-tercih { flex-direction: column; margin-top: var(--b-4); }

@@ -123,7 +123,12 @@ Not: Veriler her cihazın kendi tarayıcısında tutulur; cihazlar arası eşitl
 - `src/js/hatirlatici.js` — uygulama açıkken saatli ek görevler (SMS zamanında) ve ajandadaki saatli
   etkinlikler (15 dk önce) için ekranda uyarı + titreşim; “5 dk ertele”. Bildirim izni verilirse arka planda telefon bildirimi.
 
-## Vardiya bildirimi (her gün 06.00 ve 16.00)
+## Otomatik bildirimler (uygulama kapalıyken)
+- 06.00 bugünün ekibi + sipariş günü / ayın 1'i aylık kontroller / acil arabası eksiği / Cuma yedek hatırlatması
+- 08.30 ve 20.30: o vardiyanın sıcaklık ölçümü girilmediyse uyarı · 16.00 bu gecenin ve yarın gündüzün ekibi
+- Telefon, `veri/durum.json` (cihaz içi, isimsiz özet) ve `veri/vardiya.json` önbelleğinden okur; Ayarlar'dan tür tür kapatılabilir.
+
+### Vardiya bildirimi (ilk kurulum)
 - `.github/workflows/vardiya-bildirimi.yml`: GitHub Actions zamanlayıcısı (03.00 ve 13.00 UTC) telefona Web Push sinyali gönderir;
   yük yalnızca `{"tur":"vardiya","zaman":"sabah|aksam"}` — isim içermez.
 - Telefon (sw.js) sinyali alınca vardiya listesini cihazdaki önbellekten (`14kat-veri`) okuyup bildirimi oluşturur.

@@ -1,4 +1,4 @@
-# 14. KAT — Her gün 06.00 ve 16.00 (Türkiye saati) vardiya bildirimi
+# 14. KAT — Her gün 06.00 / 16.00 vardiya, 08.30 / 20.30 sıcaklık; sabah rutin kontroller (Türkiye saati)
 # Sunucu yalnızca "bildirim göster" sinyali gönderir; isimler telefondaki kayıttan okunur.
 # Gerekli gizli anahtar: PUSH_AYAR (uygulama → Ayarlar → Vardiya bildirimleri → Kopyala)
 name: Vardiya bildirimi
@@ -7,13 +7,15 @@ on:
   schedule:
     - cron: "0 3 * * *"    # 06.00 TRT (UTC+3)
     - cron: "0 13 * * *"   # 16.00 TRT
+    - cron: "30 5 * * *"   # 08.30 TRT sıcaklık ölçümü kontrolü (gündüz)
+    - cron: "30 17 * * *"  # 20.30 TRT sıcaklık ölçümü kontrolü (gece)
     - cron: "17 4 1 * *"   # ayda bir: deponun etkin kalması için canlılık kaydı
   workflow_dispatch:
     inputs:
       tur:
         description: "Bildirim türü"
         type: choice
-        options: [sabah, aksam]
+        options: [sabah, aksam, sicaklik-g, sicaklik-n]
         default: sabah
 
 permissions:
@@ -37,7 +39,11 @@ jobs:
           endpoint=$(echo "$PUSH_AYAR" | jq -r '.abonelik.endpoint'); echo "::add-mask::$endpoint"
           p256=$(echo "$PUSH_AYAR" | jq -r '.abonelik.keys.p256dh')
           auth=$(echo "$PUSH_AYAR" | jq -r '.abonelik.keys.auth'); echo "::add-mask::$auth"
-          if [ "$OLAY" = "workflow_dispatch" ]; then tur="$SECIM"; elif [ "$ZAMAN" = "0 3 * * *" ]; then tur="sabah"; else tur="aksam"; fi
+          case "$ZAMAN" in
+            "0 3 * * *") tur="sabah" ;; "0 13 * * *") tur="aksam" ;;
+            "30 5 * * *") tur="sicaklik-g" ;; "30 17 * * *") tur="sicaklik-n" ;; *) tur="sabah" ;;
+          esac
+          if [ "$OLAY" = "workflow_dispatch" ]; then tur="$SECIM"; fi
           npx --yes web-push@3.6.7 send-notification \
             --endpoint="$endpoint" --key="$p256" --auth="$auth" \
             --vapid-subject="mailto:bildirim@example.com" --vapid-pubkey="$acik" --vapid-pvtkey="$ozel" \
