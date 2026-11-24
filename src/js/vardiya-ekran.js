@@ -36,7 +36,7 @@
 
   let aktif = null;          // görüntülenen haftanın pazartesisi
   let temizleOnay = false;
-  let personelAcik = false, silSor = null;
+  let personelAcik = false, silSor = null, telHata = '';
 
   const kisiler = () => veri.personel.map(p => p.id);
   const ad = (id) => (veri.personel.find(p => p.id === id) || {}).ad || id;
@@ -73,19 +73,31 @@
       <div class="kart__govde">
         ${veri.personel.length ? `<ul class="gr-liste">${veri.personel.map(p => `<li class="gr-satir">
           <label class="sr-only" for="ad-${p.id}">Ad soyad</label>
-          <input id="ad-${p.id}" class="girdi" style="flex:1 1 200px" data-ad="${p.id}" value="${esc(p.ad)}" maxlength="40">
+          <input id="ad-${p.id}" class="girdi" style="flex:2 1 160px" data-ad="${p.id}" value="${esc(p.ad)}" maxlength="40">
+          <label class="sr-only" for="tel-${p.id}">${esc(p.ad)} cep telefonu</label>
+          <input id="tel-${p.id}" class="girdi" style="flex:1 1 140px" type="tel" inputmode="tel" data-tel="${p.id}" value="${esc(telGoster(p.tel))}" placeholder="05xx xxx xx xx" autocomplete="off">
           <span class="gr-satir__sag">${silSor === p.id
             ? `<button class="btn btn-tehlike btn-sm" type="button" data-sil-evet="${p.id}">Listeden çıkar</button><button class="btn btn-hayalet btn-sm" type="button" data-sil-hayir>Vazgeç</button>`
             : `<button class="btn btn-hayalet btn-ikon btn-sm" type="button" data-sil="${p.id}" aria-label="${esc(p.ad)} listeden çıkar">${i('kapat', 'ikon-sm')}</button>`}</span></li>`).join('')}</ul>` : ''}
         <form class="vrd-ekle" data-personel-form>
-          <div class="alan" style="flex:1 1 220px"><label class="alan__etiket" for="yeni-ad">Hemşire ekle</label><input id="yeni-ad" class="girdi" name="ad" required maxlength="40" placeholder="Ad Soyad" autocomplete="off"></div>
+          <div class="alan" style="flex:2 1 200px"><label class="alan__etiket" for="yeni-ad">Hemşire ekle</label><input id="yeni-ad" class="girdi" name="ad" required maxlength="40" placeholder="Ad Soyad" autocomplete="off"></div>
+          <div class="alan" style="flex:1 1 150px"><label class="alan__etiket" for="yeni-tel">Cep telefonu</label><input id="yeni-tel" class="girdi" name="tel" type="tel" inputmode="tel" placeholder="05xx xxx xx xx" autocomplete="off"></div>
           <button class="btn btn-birincil" type="submit">${i('arti')}Ekle</button>
         </form>
-        <p class="alan__ipucu" style="margin-top:8px">Sorumlu hemşire listeye eklenmez. İsimler yalnızca bu cihazda saklanır.</p>
+        ${telHata ? `<p class="alan__hata" role="alert" style="margin-top:8px">${i('uyari', 'ikon-sm')}${telHata}</p>` : ''}
+        <p class="alan__ipucu" style="margin-top:8px">Sorumlu hemşire listeye eklenmez. İsim ve numaralar yalnızca bu cihazda saklanır; numara SMS hatırlatmaları için kullanılır.</p>
       </div>
     </details>`;
   }
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  /* Telefon: 05xx…, 5xx…, 905xx…, +905xx… → +905xxxxxxxxx; geçersizse '' */
+  function telDuzelt(t) {
+    const r = String(t || '').replace(/\D/g, '');
+    const m = r.match(/^(?:90|0)?(5\d{9})$/);
+    return m ? '+90' + m[1] : '';
+  }
+  const telGoster = (t) => t ? `0${t.slice(3, 6)} ${t.slice(6, 9)} ${t.slice(9, 11)} ${t.slice(11)}` : '';
 
   /* ---------- Çizim ---------- */
   function ciz() {
@@ -271,11 +283,19 @@
     const pf = el.querySelector('[data-personel-form]');
     if (pf) pf.addEventListener('submit', ev => {
       ev.preventDefault(); const a = pf.querySelector('[name=ad]').value.trim().replace(/\s+/g, ' '); if (!a) return;
-      veri.personel.push({ id: 'p' + Date.now().toString(36), ad: a }); personelAcik = true; kaydet(); yenile('#yeni-ad');
+      const ham = pf.querySelector('[name=tel]').value.trim(), tel = telDuzelt(ham);
+      if (ham && !tel) { telHata = 'Cep numarası 05xx xxx xx xx biçiminde olmalı.'; personelAcik = true; yenile('#yeni-tel'); const y = document.getElementById('yeni-ad'); if (y) y.value = a; const t = document.getElementById('yeni-tel'); if (t) t.value = ham; return; }
+      telHata = ''; veri.personel.push({ id: 'p' + Date.now().toString(36), ad: a, tel }); personelAcik = true; kaydet(); yenile('#yeni-ad');
     });
     el.querySelectorAll('[data-ad]').forEach(inp => inp.addEventListener('change', () => {
       const a = inp.value.trim().replace(/\s+/g, ' '); const p = veri.personel.find(x => x.id === inp.dataset.ad);
       if (a && p) { p.ad = a; kaydet(); } personelAcik = true; setTimeout(() => { const f = document.activeElement; yenile(f && f.id ? '#' + f.id : null); }, 0);
+    }));
+    el.querySelectorAll('[data-tel]').forEach(inp => inp.addEventListener('change', () => {
+      const p = veri.personel.find(x => x.id === inp.dataset.tel), ham = inp.value.trim(), tel = telDuzelt(ham);
+      if (ham && !tel) telHata = `${esc(p.ad)}: cep numarası 05xx xxx xx xx biçiminde olmalı.`;
+      else { telHata = ''; p.tel = tel; kaydet(); }
+      personelAcik = true; setTimeout(() => { const f = document.activeElement; yenile(f && f.id ? '#' + f.id : `#${inp.id}`); }, 0);
     }));
     el.querySelectorAll('[data-sil]').forEach(b => b.addEventListener('click', () => { silSor = b.dataset.sil; personelAcik = true; yenile('[data-sil-hayir]'); }));
     el.querySelectorAll('[data-sil-hayir]').forEach(b => b.addEventListener('click', () => { silSor = null; yenile(); }));

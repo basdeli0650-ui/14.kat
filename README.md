@@ -102,3 +102,11 @@ Uygulama bir web uygulaması (PWA) olarak kurulur:
 2. Android'de Chrome ile adresi açın → menü (⋮) → **Ana ekrana ekle / Uygulamayı yükle**.
 3. 14. Kat simgesiyle açılır; `sw.js` sayesinde internet yokken de çalışır.
 Not: Veriler her cihazın kendi tarayıcısında tutulur; cihazlar arası eşitleme sonraki aşamadır.
+
+## SMS hatırlatma (ücretsiz, telefonun zamanlanmış mesajıyla)
+- Vardiya → Personel listesi: her hemşireye cep numarası (yalnızca bu cihazda saklanır).
+- Görev Dağıtımı → Ek görev: oda + randevu saati + “SMS ne zaman?” (15/30/45/60 dk önce veya randevu saatinde).
+- Görevin yanındaki **SMS** butonu Mesajlar uygulamasını numara ve hazır metinle açar
+  (“14. Kat hatırlatma: Oda 1410 - USG randevusu, saat 13.30.”).
+- Mesajlar'da gönder tuşuna basılı tutup (Samsung: + → Mesajı zamanla) saati seçin; SMS o saatte kendiliğinden gider.
+- Mesajlara hasta adı yazılmaz.

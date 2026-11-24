@@ -22,7 +22,7 @@
     kayitlar: {}
   };
 
-  let veri, secTarih = null, secVardiya = null, kopyaDurum = '';
+  let veri, secTarih = null, secVardiya = null, kopyaDurum = '', smsSon = null;
   function yukle() {
     try { const s = localStorage.getItem(ANAHTAR); veri = s ? JSON.parse(s) : null; } catch (e) { veri = null; }
     if (!veri || veri.surum !== 1) veri = JSON.parse(JSON.stringify(TOHUM));
@@ -56,10 +56,17 @@
   function kayit() {
     const k = anahtar();
     if (!veri.kayitlar[k]) veri.kayitlar[k] = { kisiler: null, oda: {}, rutin: {}, ek: [] };
+    // Eski kayıtlarda e.saat tamamlanma saatiydi (ör. "10.05") → bittiSaat
+    veri.kayitlar[k].ek.forEach(e => { if (e.saat && e.saat.includes('.')) { e.bittiSaat = e.saat; e.saat = ''; } });
     return veri.kayitlar[k];
   }
   const personel = () => V.personel();
   const kisaAd = (id) => (personel().find(p => p.id === id) || {}).kisa || '—';
+  const telefon = (id) => (personel().find(p => p.id === id) || {}).tel || '';
+  const dkCikar = (saat, dk) => { const [h, m] = saat.split(':').map(Number); const t = ((h * 60 + m - dk) % 1440 + 1440) % 1440; return `${String(Math.floor(t / 60)).padStart(2, '0')}.${String(t % 60).padStart(2, '0')}`; };
+  const smsMetni = (e) => `14. Kat hatırlatma: ${e.oda ? `Oda ${e.oda} - ` : ''}${e.metin}, saat ${e.saat.replace(':', '.')}.`;
+  /* Android: sms:+90…?body=…  (iOS ;body= da kabul eder) */
+  const smsLink = (tel, metin) => `sms:${tel}?body=${encodeURIComponent(metin)}`;
 
   /* Nöbetçiler: elle seçilmişse o, yoksa vardiya planından */
   function nobetciler(k) {
@@ -147,12 +154,22 @@
       </li>`;
     };
 
-    const ekSatir = (e) => `<li class="gr-satir${e.bitti ? ' bitti' : ''}">
-        <label class="onay"><input type="checkbox" data-ek-bitti="${e.id}"${e.bitti ? ' checked' : ''}> <span>${e.oncelik === 'yuksek' ? '<span class="rozet rozet-kritik">' + i('kritik') + 'Acil</span> ' : ''}${esc(e.metin)}${e.oda ? ` <span class="metin-soluk">· Oda ${e.oda}</span>` : ''}</span></label>
-        <span class="gr-satir__sag">${e.bitti ? `<span class="rozet rozet-basari">${i('onay')}${e.saat}</span>` : ''}
+    const ekSatir = (e) => {
+      const tel = telefon(e.kisi);
+      const sms = e.saat ? (tel
+        ? `<a class="btn btn-ikincil btn-sm" href="${smsLink(tel, smsMetni(e))}" data-sms="${e.id}">${i('gonder', 'ikon-sm')}SMS</a>`
+        : `<a class="btn btn-hayalet btn-sm" href="#vardiya" title="Personel listesinde numara yok">${i('uyari', 'ikon-sm')}Numara ekle</a>`) : '';
+      return `<li class="gr-satir${e.bitti ? ' bitti' : ''}">
+        <label class="onay"><input type="checkbox" data-ek-bitti="${e.id}"${e.bitti ? ' checked' : ''}> <span>${e.oncelik === 'yuksek' ? '<span class="rozet rozet-kritik">' + i('kritik') + 'Acil</span> ' : ''}${e.saat ? `<span class="rozet rozet-altin">${i('saat')}${e.saat.replace(':', '.')}</span> ` : ''}${esc(e.metin)}${e.oda ? ` <span class="metin-soluk">· Oda ${e.oda}</span>` : ''}${e.saat && !e.bitti ? `<span class="metin-xs metin-soluk" style="display:block">SMS hatırlatma ${dkCikar(e.saat, e.once || 30)}${e.smsHazir ? ' · mesaj açıldı' : ''}</span>` : ''}</span></label>
+        <span class="gr-satir__sag">${e.bitti ? `<span class="rozet rozet-basari">${i('onay')}${e.bittiSaat || ''}</span>` : sms}
           <select class="secim gr-kucuk" data-ek-kisi="${e.id}" aria-label="Sorumlu">${kisi.map(id => `<option value="${id}"${e.kisi === id ? ' selected' : ''}>${esc(kisaAd(id))}</option>`).join('')}</select>
           <button class="btn btn-hayalet btn-ikon btn-sm" type="button" data-ek-sil="${e.id}" aria-label="Görevi sil">${i('kapat', 'ikon-sm')}</button></span>
       </li>`;
+    };
+
+    const smsIpucu = smsSon ? (() => { const e = k.ek.find(x => x.id === smsSon); return e ? `<div class="uyari uyari-bilgi" role="status" style="margin-top:12px">${i('bilgi')}<div>
+        <div class="uyari__baslik">Mesajı ${dkCikar(e.saat, e.once || 30)}'e zamanlayın</div>
+        <div class="uyari__metin">Mesajlar uygulamasında gönder tuşuna basılı tutun (Samsung: + → Mesajı zamanla) ve saati ${dkCikar(e.saat, e.once || 30)} seçin. SMS o saatte kendiliğinden gider.</div></div></div>` : ''; })() : '';
 
     return `
       <div class="sayfa-bas">
@@ -207,7 +224,7 @@
         <div class="kart">
           <div class="kart__bas"><h2 class="kart__baslik">${i('gorev')}Ek görevler</h2><span class="rozet rozet-notr">${acikEk} açık</span></div>
           <div class="kart__govde">
-            ${k.ek.length ? `<ul class="gr-liste">${k.ek.map(ekSatir).join('')}</ul>` : '<p class="metin-sm metin-soluk">Bu vardiya için ek görev yok.</p>'}
+            ${k.ek.length ? `<ul class="gr-liste">${k.ek.slice().sort((a, b) => (a.saat || '99').localeCompare(b.saat || '99')).map(ekSatir).join('')}</ul>` : '<p class="metin-sm metin-soluk">Bu vardiya için ek görev yok.</p>'}
             ${ikiKisi ? `<form class="gr-ek-form" data-ek-form>
               <div class="alan" style="grid-column:1/-1"><label class="alan__etiket" for="ek-metin">Yeni görev</label>
                 <input id="ek-metin" class="girdi" name="metin" required maxlength="120" placeholder="Örn. Pansuman, taburcu eğitimi"></div>
@@ -215,9 +232,14 @@
                 <select id="ek-oda" class="secim" name="oda"><option value="">Yok</option>${veri.odalar.map(o => `<option>${o.no}</option>`).join('')}</select></div>
               <div class="alan"><label class="alan__etiket" for="ek-oncelik">Öncelik</label>
                 <select id="ek-oncelik" class="secim" name="oncelik"><option value="normal">Normal</option><option value="yuksek">Acil</option></select></div>
+              <div class="alan"><label class="alan__etiket" for="ek-saat">Randevu saati</label>
+                <input id="ek-saat" class="girdi" type="time" name="saat"><span class="alan__ipucu">İsteğe bağlı · SMS için</span></div>
+              <div class="alan"><label class="alan__etiket" for="ek-once">SMS ne zaman?</label>
+                <select id="ek-once" class="secim" name="once"><option value="15">15 dk önce</option><option value="30" selected>30 dk önce</option><option value="45">45 dk önce</option><option value="60">1 saat önce</option><option value="0">Randevu saatinde</option></select></div>
               <button class="btn btn-birincil" type="submit" style="grid-column:1/-1">${i('arti')}Ekle</button>
-              <p class="alan__ipucu" style="grid-column:1/-1">Oda seçilirse görev o odanın hemşiresine atanır.</p>
+              <p class="alan__ipucu" style="grid-column:1/-1">Oda seçilirse görev o odanın hemşiresine atanır. Randevu saati girilirse görevin yanında SMS butonu çıkar.</p>
             </form>` : ''}
+            ${smsIpucu}
           </div>
         </div>
       </section>
@@ -243,7 +265,7 @@
     kisi.forEach(id => {
       const odalar = veri.odalar.filter(o => o.dolu && k.oda[o.no] === id).map(o => o.no);
       satir.push(`${kisaAd(id)}: ${odalar.join(', ') || '—'}`);
-      const isler = [...rutinlerBuVardiya().filter(r => k.rutin[r.id].kisi === id).map(r => r.ad), ...k.ek.filter(e => e.kisi === id).map(e => e.metin + (e.oda ? ` (${e.oda})` : ''))];
+      const isler = [...rutinlerBuVardiya().filter(r => k.rutin[r.id].kisi === id).map(r => r.ad), ...k.ek.filter(e => e.kisi === id).map(e => (e.saat ? e.saat.replace(':', '.') + ' ' : '') + e.metin + (e.oda ? ` (${e.oda})` : ''))];
       if (isler.length) satir.push(`  • ${isler.join('\n  • ')}`);
     });
     return satir.join('\n');
@@ -271,15 +293,16 @@
     });
     on('[data-rutin-bitti]', 'change', c => { const r = k.rutin[c.dataset.rutinBitti]; r.bitti = c.checked; r.saat = c.checked ? saatSimdi() : ''; kaydet(); yenile(`[data-rutin-bitti="${c.dataset.rutinBitti}"]`); });
     on('[data-rutin-kisi]', 'change', s => { k.rutin[s.dataset.rutinKisi].kisi = s.value; kaydet(); yenile(`[data-rutin-kisi="${s.dataset.rutinKisi}"]`); });
-    on('[data-ek-bitti]', 'change', c => { const e = k.ek.find(x => x.id === c.dataset.ekBitti); e.bitti = c.checked; e.saat = c.checked ? saatSimdi() : ''; kaydet(); yenile(`[data-ek-bitti="${e.id}"]`); });
+    on('[data-ek-bitti]', 'change', c => { const e = k.ek.find(x => x.id === c.dataset.ekBitti); e.bitti = c.checked; e.bittiSaat = c.checked ? saatSimdi() : ''; kaydet(); yenile(`[data-ek-bitti="${e.id}"]`); });
     on('[data-ek-kisi]', 'change', s => { k.ek.find(x => x.id === s.dataset.ekKisi).kisi = s.value; kaydet(); yenile(); });
+    on('[data-sms]', 'click', a => { const e = k.ek.find(x => x.id === a.dataset.sms); if (e) { e.smsHazir = true; kaydet(); } smsSon = a.dataset.sms; setTimeout(() => yenile(), 300); });
     on('[data-ek-sil]', 'click', b => { k.ek = k.ek.filter(x => x.id !== b.dataset.ekSil); kaydet(); yenile('#ek-metin'); });
     const form = el.querySelector('[data-ek-form]');
     if (form) form.addEventListener('submit', ev => {
       ev.preventDefault();
       const f = new FormData(form), metin_ = String(f.get('metin') || '').trim(); if (!metin_) return;
       const kisi = nobetciler(k), oda = f.get('oda');
-      k.ek.push({ id: 'e' + Date.now(), metin: metin_, oda, oncelik: f.get('oncelik'), kisi: (oda && k.oda[oda]) || kisi[0], bitti: false, saat: '' });
+      k.ek.push({ id: 'e' + Date.now(), metin: metin_, oda, oncelik: f.get('oncelik'), kisi: (oda && k.oda[oda]) || kisi[0], bitti: false, saat: f.get('saat') || '', once: +f.get('once') });
       kaydet(); yenile('#ek-metin');
     });
     on('[data-oda-dolu]', 'change', s => { veri.odalar[+s.dataset.odaDolu].dolu = s.value === '1'; kaydet(); yenile(`#${s.id}`); });
