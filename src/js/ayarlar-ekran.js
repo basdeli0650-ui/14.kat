@@ -83,17 +83,25 @@
       <section class="kart">
         <div class="kart__bas"><h2 class="kart__baslik">${i('bilgi')}Uygulama</h2></div>
         <div class="kart__govde"><ul class="liste metin-sm">
-          <li>${i('onay', 'ikon-sm')}<span>14. Kat · sürüm 1.0 · 6 modül</span></li>
+          <li>${i('onay', 'ikon-sm')}<span>14. Kat · sürüm 1.0 · <span id="surum-bilgi">yükleniyor…</span></span></li>
           <li>${i('onay', 'ikon-sm')}<span>Veriler sunucuya gönderilmez; yalnızca bu cihazın tarayıcısında saklanır.</span></li>
           <li>${i('onay', 'ikon-sm')}<span>Android: Chrome menüsü → “Ana ekrana ekle” ile uygulama olarak kurulur, internet yokken de açılır.</span></li>
         </ul>
-        <div class="vrd-eylemler" style="margin-top:12px"><a class="btn btn-hayalet btn-sm" href="#tasarim">${i('ayar', 'ikon-sm')}Tasarım sistemi</a></div></div>
+        <div class="vrd-eylemler" style="margin-top:12px"><button class="btn btn-ikincil btn-sm" type="button" data-guncelle>${i('saat', 'ikon-sm')}Güncellemeyi kontrol et</button><a class="btn btn-hayalet btn-sm" href="#tasarim">${i('ayar', 'ikon-sm')}Tasarım sistemi</a></div></div>
       </section>`;
   }
 
   function yenile(odak) { const el = document.getElementById('icerik'); el.innerHTML = ciz(); bagla(el); if (odak) { const o = el.querySelector(odak); if (o) o.focus(); } }
 
   function bagla(el) {
+    const sb = el.querySelector('#surum-bilgi');
+    if (sb) { try { caches.keys().then(k => { const v = k.filter(x => x.startsWith('14kat-')).sort().pop(); sb.textContent = v ? 'önbellek ' + v.replace('14kat-', '') : 'önbellek yok (tarayıcı modu)'; }).catch(() => { sb.textContent = '—'; }); } catch (e) { sb.textContent = '—'; } }
+    const gb = el.querySelector('[data-guncelle]');
+    if (gb) gb.addEventListener('click', async () => {
+      gb.disabled = true; gb.lastChild.textContent = 'Kontrol ediliyor…';
+      try { const r = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (r) await r.update(); } catch (e) { /* */ }
+      setTimeout(() => location.reload(), 1500);
+    });
     const db = el.querySelector('[data-deneme]');
     if (db) db.addEventListener('click', async () => { denemeMesaj = await window.Hatirlatici.deneme(); yenile('[data-deneme]'); });
     const bb = el.querySelector('[data-bildirim]');

@@ -79,7 +79,11 @@
   <script src="src/js/app.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-      try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* önbellek olmadan devam */ }
+      try {
+        navigator.serviceWorker.register('sw.js');
+        let yenilendi = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => { if (!yenilendi) { yenilendi = true; location.reload(); } });
+      } catch (e) { /* önbellek olmadan devam */ }
     }
   </script>
 </body>
