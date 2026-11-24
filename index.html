@@ -16,28 +16,17 @@
 </head>
 <body>
   <main class="giris">
-    <div class="kart kart-premium giris__kart">
+    <div class="kart kart-premium giris__kart" id="giris-kart">
       <img class="logo giris__logo" src="public/branding/logo-14kat-256.png" alt="14. Kat logosu" width="132" height="132">
       <h1 class="giris__baslik">14. Kat</h1>
-      <p class="giris__alt">Sorumlu hemşire servis yönetimi</p>
-
-      <!-- Kimlik doğrulama henüz bağlı değil: form yalnızca panele yönlendirir. -->
-      <form class="giris__form" action="panel.html" method="get">
-        <div class="alan">
-          <label class="alan__etiket" for="kullanici">Kullanıcı adı</label>
-          <input class="girdi" id="kullanici" name="kullanici" autocomplete="username" required>
-        </div>
-        <div class="alan">
-          <label class="alan__etiket" for="sifre">Şifre</label>
-          <input class="girdi" id="sifre" type="password" autocomplete="current-password" required>
-        </div>
-        <label class="onay"><input type="checkbox" name="hatirla"> Beni hatırla</label>
-        <button class="btn btn-birincil btn-tam" type="submit"><svg class="ikon" aria-hidden="true"><use href="#i-kilit"/></svg>Giriş yap</button>
-      </form>
-      <p class="giris__dip">Yalnızca 14. kat personeli içindir.</p>
+      <p class="giris__alt" id="giris-alt">Sorumlu hemşire servis yönetimi</p>
+      <div id="giris-icerik" aria-live="polite"></div>
+      <p class="giris__dip">Veriler yalnızca bu cihazda saklanır.</p>
     </div>
   </main>
   <script src="src/js/ikonlar.js"></script>
+  <script src="src/js/kilit.js"></script>
+  <script src="src/js/giris.js"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
       try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* önbellek olmadan devam */ }

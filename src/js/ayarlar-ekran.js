@@ -6,7 +6,8 @@
   'use strict';
   const ON_EK = '14kat.';
   const AYAR = '14kat.ayar.v1';
-  let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' };
+  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme']; // yedeğe girmez, geri yüklemede silinmez
+  let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' }, pinMesaj = null;
 
   const i = (a, s = '') => `<svg class="ikon ${s}" aria-hidden="true"><use href="#i-${a}"/></svg>`;
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -15,7 +16,7 @@
 
   function oku(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function yaz(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
-  function anahtarlar() { const a = []; try { for (let n = 0; n < localStorage.length; n++) { const k = localStorage.key(n); if (k && k.startsWith(ON_EK) && k !== AYAR) a.push(k); } } catch (e) { /* */ } return a.sort(); }
+  function anahtarlar() { const a = []; try { for (let n = 0; n < localStorage.length; n++) { const k = localStorage.key(n); if (k && k.startsWith(ON_EK) && !HARIC.includes(k)) a.push(k); } } catch (e) { /* */ } return a.sort(); }
   function ayar() { try { return JSON.parse(oku(AYAR)) || {}; } catch (e) { return {}; } }
   function sonYedekGun() { const a = ayar(); if (!a.sonYedek) return null; return Math.round((Date.parse(iso(new Date())) - Date.parse(a.sonYedek)) / 864e5); }
 
@@ -50,6 +51,19 @@
       </section>
 
       <section class="kart">
+        <div class="kart__bas"><h2 class="kart__baslik">${i('kilit')}PIN kilidi</h2>
+          <button class="btn btn-ikincil btn-sm" type="button" data-kilitle>${i('kilit', 'ikon-sm')}Şimdi kilitle</button></div>
+        <div class="kart__govde">
+          <p class="metin-sm metin-ikincil">Uygulama her açılışta ve 10 dakikadan uzun arka planda kaldığında PIN ister.</p>
+          <form class="form-izgara" data-pin-form style="margin-top:12px">
+            ${['eski|Mevcut PIN', 'yeni|Yeni PIN', 'yeni2|Yeni PIN tekrar'].map(x => { const [ad, et] = x.split('|'); return `<div class="alan"><label class="alan__etiket" for="pin-${ad}">${et}</label><input id="pin-${ad}" name="${ad}" class="girdi pin-girdi" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"></div>`; }).join('')}
+            <button class="btn btn-ikincil" type="submit" style="align-self:end">PIN'i değiştir</button>
+          </form>
+          ${pinMesaj ? `<p class="${pinMesaj[0] === 'ok' ? 'alan__ipucu' : 'alan__hata'}" role="status" style="margin-top:8px">${pinMesaj[0] === 'ok' ? '' : i('uyari', 'ikon-sm')}${esc(pinMesaj[1])}</p>` : ''}
+        </div>
+      </section>
+
+      <section class="kart">
         <div class="kart__bas"><h2 class="kart__baslik">${i('bilgi')}Uygulama</h2></div>
         <div class="kart__govde"><ul class="liste metin-sm">
           <li>${i('onay', 'ikon-sm')}<span>14. Kat · sürüm 1.0 · 6 modül</span></li>
@@ -63,6 +77,18 @@
   function yenile(odak) { const el = document.getElementById('icerik'); el.innerHTML = ciz(); bagla(el); if (odak) { const o = el.querySelector(odak); if (o) o.focus(); } }
 
   function bagla(el) {
+    const kb = el.querySelector('[data-kilitle]');
+    if (kb && window.Kilit) kb.addEventListener('click', () => window.Kilit.kilitle());
+    const pf = el.querySelector('[data-pin-form]');
+    if (pf && window.Kilit) pf.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const K = window.Kilit, f = pf;
+      if (K.beklemeSn()) pinMesaj = ['hata', `Çok fazla hatalı deneme. ${K.beklemeSn()} saniye bekleyin.`];
+      else if (!K.gecerli(f.yeni.value)) pinMesaj = ['hata', 'Yeni PIN 4–6 rakamdan oluşmalı.'];
+      else if (f.yeni.value !== f.yeni2.value) pinMesaj = ['hata', 'Yeni PIN tekrarı aynı değil.'];
+      else pinMesaj = (await K.degistir(f.eski.value, f.yeni.value)) ? ['ok', 'PIN değiştirildi.'] : ['hata', 'Mevcut PIN yanlış.'];
+      yenile('[data-pin-form] button');
+    });
     const yb = el.querySelector('[data-yedekle]');
     if (yb) yb.addEventListener('click', () => {
       const veri = {}; anahtarlar().forEach(k => { try { veri[k] = JSON.parse(oku(k)); } catch (e) { /* bozuk kayıt atlanır */ } });
@@ -84,7 +110,7 @@
         try {
           const j = JSON.parse(r.result);
           if (j.uygulama !== '14. Kat' || !j.veri || typeof j.veri !== 'object') throw new Error('biçim');
-          const temiz = {}; Object.keys(j.veri).forEach(k => { if (k.startsWith(ON_EK) && k !== AYAR) temiz[k] = j.veri[k]; });
+          const temiz = {}; Object.keys(j.veri).forEach(k => { if (k.startsWith(ON_EK) && !HARIC.includes(k)) temiz[k] = j.veri[k]; });
           if (!Object.keys(temiz).length) throw new Error('boş');
           durum = { mesaj: '', tur: '', bekleyen: { tarih: j.tarih, veri: temiz }, dosyaAd: f.name };
           yenile('[data-geri-hayir]');

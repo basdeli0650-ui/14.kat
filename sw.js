@@ -1,6 +1,6 @@
 /* 14. KAT — çevrimdışı çalışma için önbellek (service worker)
    Dosya değiştiğinde SURUM'ü artırın. */
-const SURUM = '14kat-v2';
+const SURUM = '14kat-v3';
 const DOSYALAR = [
   "./",
   "index.html",
@@ -17,6 +17,8 @@ const DOSYALAR = [
   "src/styles/miat.css",
   "src/styles/asistan.css",
   "src/js/ikonlar.js",
+  "src/js/kilit.js",
+  "src/js/giris.js",
   "src/js/vardiya-motor.js",
   "src/js/vardiya-ekran.js",
   "src/js/gorev-ekran.js",

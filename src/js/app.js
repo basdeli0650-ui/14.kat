@@ -229,6 +229,10 @@
   document.addEventListener('DOMContentLoaded', () => {
     git();
     window.addEventListener('hashchange', git);
+    if (window.Kilit) {
+      window.Kilit.izle();
+      ['kilitle', 'kilitle-ust'].forEach(id => { const kb = document.getElementById(id); if (kb) kb.addEventListener('click', () => window.Kilit.kilitle()); });
+    }
     acBtn().addEventListener('click', menuAc);
     perde().addEventListener('click', menuKapat);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') menuKapat(); });

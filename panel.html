@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
+  <script id="kilit-koruma">try { if (!sessionStorage.getItem('14kat.oturum')) location.replace('index.html'); } catch (e) { location.replace('index.html'); }</script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>14. Kat</title>
   <meta name="theme-color" content="#09090B">
@@ -41,7 +42,7 @@
         <div class="kullanici">
           <div class="kullanici__avatar" aria-hidden="true">SH</div>
           <div><div class="kullanici__ad">Sorumlu Hemşire</div><div class="kullanici__rol">14. Kat</div></div>
-          <a class="btn btn-hayalet btn-ikon" href="index.html" aria-label="Çıkış yap" style="margin-left:auto"><svg class="ikon" aria-hidden="true"><use href="#i-cikis"/></svg></a>
+          <button class="btn btn-hayalet btn-ikon" type="button" id="kilitle" aria-label="Uygulamayı kilitle" style="margin-left:auto"><svg class="ikon" aria-hidden="true"><use href="#i-kilit"/></svg></button>
         </div>
       </div>
     </nav>
@@ -53,7 +54,7 @@
         <span class="ust-bar__baslik" id="ust-baslik">Genel Bakış</span>
         <div class="ust-bar__sag">
           <span class="rozet rozet-altin ust-bar__gizle-mobil" id="vardiya-rozet">Gündüz vardiyası</span>
-          <button class="btn btn-hayalet btn-ikon" type="button" aria-label="Bildirimler, 3 yeni"><svg class="ikon" aria-hidden="true"><use href="#i-zil"/></svg></button>
+          <button class="btn btn-hayalet btn-ikon" type="button" id="kilitle-ust" aria-label="Uygulamayı kilitle"><svg class="ikon" aria-hidden="true"><use href="#i-kilit"/></svg></button>
         </div>
       </header>
       <main class="icerik" id="icerik" tabindex="-1"></main>
@@ -63,6 +64,7 @@
   <nav class="alt-nav" id="alt-nav" aria-label="Hızlı menü"></nav>
 
   <script src="src/js/ikonlar.js"></script>
+  <script src="src/js/kilit.js"></script>
   <script src="src/js/vardiya-motor.js"></script>
   <script src="src/js/vardiya-ekran.js"></script>
   <script src="src/js/gorev-ekran.js"></script>

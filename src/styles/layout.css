@@ -133,3 +133,5 @@
 .giris__alt { text-align: center; color: var(--renk-metin-ikincil); font-size: var(--yazi-sm); margin: 6px 0 var(--b-6); }
 .giris__form { display: flex; flex-direction: column; gap: var(--b-4); }
 .giris__dip { text-align: center; color: var(--renk-metin-soluk); font-size: var(--yazi-xs); margin-top: var(--b-6); }
+
+.pin-girdi { font-size: 1.5rem; letter-spacing: 0.5em; text-align: center; font-variant-numeric: tabular-nums; }
