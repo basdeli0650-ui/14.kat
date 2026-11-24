@@ -110,3 +110,14 @@ Not: Veriler her cihazın kendi tarayıcısında tutulur; cihazlar arası eşitl
   (“14. Kat hatırlatma: Oda 1410 - USG randevusu, saat 13.30.”).
 - Mesajlar'da gönder tuşuna basılı tutup (Samsung: + → Mesajı zamanla) saati seçin; SMS o saatte kendiliğinden gider.
 - Mesajlara hasta adı yazılmaz.
+
+## Odalar (doluluk paneli)
+- `src/js/odalar-ekran.js`, `src/styles/odalar.css` — veri Görev Dağıtımı'nın oda listesiyle ortak.
+- Her oda: dolu/boş, yatış günü, planlı taburcu, bakım yoğunluğu, izolasyon (temas/damlacık/solunum),
+  düşme riski, bası yarası riski, aç (NPO), alerji, kısa not. Hasta adı tutulmaz.
+- “Yatış al”: oda şu anki vardiyada daha az odası olan hemşireye atanır. “Taburcu et”: işaretler temizlenir.
+- İşaretler görev ekranındaki oda kutularında, brifingde ve devir teslim özetinde görünür.
+
+## Uygulama içi hatırlatıcı
+- `src/js/hatirlatici.js` — uygulama açıkken saatli ek görevler (SMS zamanında) ve ajandadaki saatli
+  etkinlikler (15 dk önce) için ekranda uyarı + titreşim; “5 dk ertele”. Bildirim izni verilirse arka planda telefon bildirimi.

@@ -30,6 +30,17 @@
     { id: 'fefo', no: 18, ikon: 'saat', baslik: 'Miadı yakın ürünlerde kullanım önceliği', aciklama: 'Dolap dolap “önce bunu kullan” listesi (ilk miadı dolan ilk kullanılır).', dugme: 'Listeyi çıkar', calis: fefo }
   ];
 
+  function odaSatirlari() {
+    const o = window.GorevEkrani.odaOzeti(), s = [`Odalar: ${o.dolu}/${o.toplam} dolu · bugün ${o.yatis} yatış, ${o.taburcu} taburcu`];
+    if (o.taburcuBugun.length) s.push(`• Planlı taburcu: ${o.taburcuBugun.join(', ')}`);
+    if (o.izolasyon.length) s.push(`• İzolasyon: ${o.izolasyon.join(', ')}`);
+    if (o.dusme.length) s.push(`• Düşme riski: ${o.dusme.join(', ')}`);
+    if (o.basi.length) s.push(`• Bası yarası riski: ${o.basi.join(', ')}`);
+    if (o.npo.length) s.push(`• Aç (NPO): ${o.npo.join(', ')}`);
+    if (o.alerji.length) s.push(`• Alerji: ${o.alerji.join(', ')}`);
+    return s;
+  }
+
   function brifing() {
     const g = window.GorevEkrani.vardiyaOzeti(), d = new Date(), t = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const V = window.VardiyaEkrani, ad = (id) => (V.personel().find(p => p.id === id) || {}).kisa;
@@ -39,6 +50,7 @@
     const satir = [`14. Kat · Servis brifingi · ${bugunUzun()}`, '',
       `Gündüz: ${gun.join(', ') || '—'}   Gece: ${gece.join(', ') || '—'}`,
       ...(g.kisiler.length === 2 ? [`Odalar (${g.vardiya === 'G' ? 'gündüz' : 'gece'}): ${g.kisiler.map(k => `${k.ad} ${k.odalar.join(', ')}`).join(' · ')}`] : []),
+      '', ...odaSatirlari(),
       '', 'Dikkat:', ...(dik.length ? dik : ['• Önemli uyarı yok']),
       '', 'Bugün:', ...(aj.etkinlikler.length ? aj.etkinlikler.map(e => `• ${e.saat ? e.saat.replace(':', '.') + ' ' : ''}${e.baslik}`) : ['• Planlı toplantı/denetim yok']),
       ...(aj.geciken ? [`• ${aj.geciken} geciken iş var`] : []),
@@ -54,6 +66,7 @@
       `14. Kat · Devir teslim · ${bugunUzun()} ${g.vardiya === 'G' ? 'gündüz → gece' : 'gece → gündüz'}`, '',
       'S — Durum',
       `• Nöbetçiler: ${g.kisiler.map(k => `${k.ad} (${k.odalar.join(', ') || 'oda yok'})`).join(' · ') || 'belirlenmedi'}`,
+      ...odaSatirlari().map((x, n) => n === 0 ? `• ${x}` : '  ' + x),
       '', 'B — Vardiyada yapılanlar',
       ...(g.bitenIsler.length ? g.bitenIsler.map(x => `• ${x}`) : ['• Kayıtlı tamamlanan iş yok']),
       '', 'A — Değerlendirme',

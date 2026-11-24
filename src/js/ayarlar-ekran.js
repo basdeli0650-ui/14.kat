@@ -6,7 +6,7 @@
   'use strict';
   const ON_EK = '14kat.';
   const AYAR = '14kat.ayar.v1';
-  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme']; // yedeğe girmez, geri yüklemede silinmez
+  const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme', '14kat.hatirlatma.v1']; // yedeğe girmez, geri yüklemede silinmez
   let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' }, pinMesaj = null;
 
   const i = (a, s = '') => `<svg class="ikon ${s}" aria-hidden="true"><use href="#i-${a}"/></svg>`;
@@ -23,6 +23,7 @@
   const MODUL = { '14kat.vardiya.v1': 'Vardiya ve personel', '14kat.gorev.v1': 'Görev dağıtımı', '14kat.ajanda.v1': 'Ajanda', '14kat.stok.v1': 'Stok ve sarf', '14kat.miat.v1': 'Miat ve sıcaklık' };
 
   function ciz() {
+    const bd = window.Hatirlatici ? window.Hatirlatici.bildirimDurumu() : 'yok';
     const k = anahtarlar(), gun = sonYedekGun(), boyut = k.reduce((t, x) => t + (oku(x) || '').length, 0);
     const b = durum.bekleyen;
     return `
@@ -64,6 +65,17 @@
       </section>
 
       <section class="kart">
+        <div class="kart__bas"><h2 class="kart__baslik">${i('zil')}Hatırlatmalar</h2>
+          <span class="rozet ${bd === 'granted' ? 'rozet-basari' : 'rozet-notr'}">${bd === 'granted' ? 'Bildirim açık' : bd === 'denied' ? 'Bildirim engelli' : bd === 'yok' ? 'Desteklenmiyor' : 'Bildirim kapalı'}</span></div>
+        <div class="kart__govde">
+          <p class="metin-sm metin-ikincil">Uygulama açıkken saatli görevler (SMS zamanında) ve ajandadaki saatli etkinlikler (15 dk önce) ekranda uyarı ve titreşimle hatırlatılır. Bildirim izni verirseniz uygulama arka plandayken de telefon bildirimi gelir.</p>
+          ${bd === 'default' ? `<div class="vrd-eylemler" style="margin-top:12px"><button class="btn btn-ikincil btn-sm" type="button" data-bildirim>${i('zil', 'ikon-sm')}Bildirimlere izin ver</button></div>` : ''}
+          ${bd === 'denied' ? '<p class="alan__ipucu" style="margin-top:8px">İzni açmak için: tarayıcı ayarları → Site ayarları → Bildirimler.</p>' : ''}
+          <p class="alan__ipucu" style="margin-top:8px">Uygulama tamamen kapalıyken hatırlatma için SMS'i Mesajlar'da zamanlayın.</p>
+        </div>
+      </section>
+
+      <section class="kart">
         <div class="kart__bas"><h2 class="kart__baslik">${i('bilgi')}Uygulama</h2></div>
         <div class="kart__govde"><ul class="liste metin-sm">
           <li>${i('onay', 'ikon-sm')}<span>14. Kat · sürüm 1.0 · 6 modül</span></li>
@@ -77,6 +89,8 @@
   function yenile(odak) { const el = document.getElementById('icerik'); el.innerHTML = ciz(); bagla(el); if (odak) { const o = el.querySelector(odak); if (o) o.focus(); } }
 
   function bagla(el) {
+    const bb = el.querySelector('[data-bildirim]');
+    if (bb) bb.addEventListener('click', async () => { await window.Hatirlatici.bildirimIzni(); yenile(); });
     const kb = el.querySelector('[data-kilitle]');
     if (kb && window.Kilit) kb.addEventListener('click', () => window.Kilit.kilitle());
     const pf = el.querySelector('[data-pin-form]');

@@ -51,6 +51,8 @@
     if (st.kritik - st.acilKritik.length > 0) u.push(['uyari', 'stok', `${st.kritik - st.acilKritik.length} malzeme alt sınırda`, 'Stok modülünden sipariş listesine bakın.']);
     if (st.acilSayimGecikti) u.push(['uyari', 'stok', 'Acil arabası aylık sayımı bekliyor', st.acilSayimGecikti]);
     if (m.kontrolBekleyen.length) u.push(['uyari', 'kalender', `Aylık dolap kontrolü bekleyen: ${m.kontrolBekleyen.length}`, m.kontrolBekleyen.map(kac).join(', ')]);
+    const od = window.GorevEkrani.odaOzeti();
+    if (od.taburcuBugun.length) u.push(['bilgi', 'yatak', `Bugün planlı taburcu: ${od.taburcuBugun.length}`, od.taburcuBugun.join(', ')]);
     if (m.olcumEksik) u.push(['uyari', 'termometre', 'Bu vardiyanın sıcaklık ölçümü eksik', 'Miat ve Sıcaklık ekranından girin.']);
     const yg = window.AyarlarEkrani.sonYedekGun();
     if (window.AyarlarEkrani.veriVar() && (yg == null || yg > 7)) u.push(['uyari', 'kilit', yg == null ? 'Henüz yedek alınmadı' : `Son yedek ${yg} gün önce`, 'Ayarlar → “Yedek dosyası indir”. Kayıtlar yalnızca bu cihazda.']);
@@ -93,6 +95,12 @@
       baslik: 'Vardiya Planlayıcı', ikon: 'vardiya',
       ciz: () => window.VardiyaEkrani.ciz(),
       bagla: (el) => window.VardiyaEkrani.bagla(el)
+    },
+
+    odalar: {
+      baslik: 'Odalar', ikon: 'yatak',
+      ciz: () => window.OdalarEkrani.ciz(),
+      bagla: (el) => window.OdalarEkrani.bagla(el)
     },
 
     gorevler: {
@@ -177,12 +185,12 @@
   const menu = [
     { grup: 'Genel', ogeler: [['panel', 'Genel Bakış']] },
     { grup: 'Modüller', ogeler: [
-      ['vardiya', 'Vardiya Planlayıcı', () => window.VardiyaEkrani.ozet().eksik.length], ['gorevler', 'Görev Dağıtımı', () => window.GorevEkrani.ozet().acik], ['ajanda', 'Ajanda'],
+      ['vardiya', 'Vardiya Planlayıcı', () => window.VardiyaEkrani.ozet().eksik.length], ['odalar', 'Odalar'], ['gorevler', 'Görev Dağıtımı', () => window.GorevEkrani.ozet().acik], ['ajanda', 'Ajanda'],
       ['stok', 'Stok ve Sarf', () => window.StokEkrani.ozet().kritik], ['miat', 'Miat ve Sıcaklık', () => { const m = window.MiatEkrani.ozet(); return m.sicaklikDisi.length + m.miatGecen + m.miatYakin.filter(u => u.kalan <= 7).length; }], ['asistan', 'Asistan']
     ]},
     { grup: 'Sistem', ogeler: [['ayarlar', 'Ayarlar', () => { const g = window.AyarlarEkrani.sonYedekGun(); return window.AyarlarEkrani.veriVar() && (g == null || g > 7) ? 1 : 0; }]] }
   ];
-  const altNav = [['panel', 'Panel'], ['vardiya', 'Vardiya'], ['gorevler', 'Görevler'], ['stok', 'Stok'], ['asistan', 'Asistan']];
+  const altNav = [['panel', 'Panel'], ['odalar', 'Odalar'], ['gorevler', 'Görevler'], ['vardiya', 'Vardiya'], ['asistan', 'Asistan']];
 
   function menuyuCiz() {
     document.getElementById('menu-icerik').innerHTML = menu.map(g => `
@@ -229,6 +237,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     git();
     window.addEventListener('hashchange', git);
+    if (window.Hatirlatici) window.Hatirlatici.baslat();
     if (window.Kilit) {
       window.Kilit.izle();
       ['kilitle', 'kilitle-ust'].forEach(id => { const kb = document.getElementById(id); if (kb) kb.addEventListener('click', () => window.Kilit.kilitle()); });

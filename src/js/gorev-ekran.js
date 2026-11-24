@@ -87,6 +87,11 @@
     return oda;
   }
 
+  const IZOL = { temas: 'Temas izol.', damlacik: 'Damlacık izol.', solunum: 'Solunum izol.' };
+  function isaretler(o) {
+    return [o.izolasyon && IZOL[o.izolasyon], o.dusme && 'Düşme', o.basi && 'Bası', o.npo && 'Aç', o.alerji && 'Alerji'].filter(Boolean).join(' · ');
+  }
+
   function rutinlerBuVardiya() { return veri.rutinler.filter(r => r.vardiya === 'her' || r.vardiya === secVardiya); }
 
   /* Seçili vardiyanın kaydını hazırla: otomatik oda bölme, rutin sorumluları, ölçümden rutin */
@@ -140,7 +145,7 @@
         <div class="kart__govde">
           <div class="gr-odalar">${odalar.length ? odalar.map(o => `
             <button class="gr-oda" type="button" data-tasi="${o.no}" data-yogunluk="${o.yogunluk}" aria-label="Oda ${o.no}, ${YOGUNLUK[o.yogunluk]}. Diğer hemşireye taşı">
-              <span class="gr-oda__no">${o.no}</span><span class="gr-oda__y">${YOGUNLUK[o.yogunluk]}</span></button>`).join('') : '<p class="metin-sm metin-soluk">Oda yok</p>'}</div>
+              <span class="gr-oda__no">${o.no}</span><span class="gr-oda__y">${YOGUNLUK[o.yogunluk]}</span>${isaretler(o) ? `<span class="gr-oda__isaret">${isaretler(o)}</span>` : ''}</button>`).join('') : '<p class="metin-sm metin-soluk">Oda yok</p>'}</div>
           ${benim.length || ekler.length ? `<ul class="gr-mini">${benim.map(r => `<li>${k.rutin[r.id].bitti ? i('onay', 'ikon-sm') : i('saat', 'ikon-sm')}${esc(r.ad)}</li>`).join('')}${ekler.map(e => `<li>${e.bitti ? i('onay', 'ikon-sm') : i('gorev', 'ikon-sm')}${esc(e.metin)}${e.oda ? ` · ${e.oda}` : ''}</li>`).join('')}</ul>` : ''}
         </div></div>`;
     };
@@ -244,18 +249,11 @@
         </div>
       </section>
 
-      <details class="kart gr-ayar">
-        <summary class="kart__bas"><span class="kart__baslik">${i('ayar')}Oda durumu ve yoğunluk</span><span class="rozet rozet-notr">${dolu.length}/${veri.odalar.length} dolu</span></summary>
-        <div class="tablo-sarici"><table class="tablo">
-          <thead><tr><th>Oda</th><th>Durum</th><th>Yoğunluk</th></tr></thead>
-          <tbody>${veri.odalar.map((o, n) => `<tr>
-            <td><label class="sr-only" for="oda-no-${n}">Oda numarası</label><input id="oda-no-${n}" class="girdi gr-oda-no" data-oda-no="${n}" value="${esc(o.no)}" inputmode="numeric" maxlength="6"></td>
-            <td><label class="sr-only" for="oda-d-${n}">Oda ${o.no} durumu</label><select id="oda-d-${n}" class="secim" data-oda-dolu="${n}"><option value="1"${o.dolu ? ' selected' : ''}>Dolu</option><option value="0"${o.dolu ? '' : ' selected'}>Boş</option></select></td>
-            <td><label class="sr-only" for="oda-y-${n}">Oda ${o.no} yoğunluğu</label><select id="oda-y-${n}" class="secim" data-oda-y="${n}"${o.dolu ? '' : ' disabled'}>${[1, 2, 3].map(y => `<option value="${y}"${o.yogunluk === y ? ' selected' : ''}>${YOGUNLUK[y]}</option>`).join('')}</select></td>
-          </tr>`).join('')}</tbody></table></div>
-        <div class="kart__alt metin-xs metin-ikincil">Odalar 5–4 bölünür. Yoğunluk (Hafif 1, Orta 2, Ağır 3) yalnızca 5 odanın hangi tarafa düşeceğini belirler. Değişiklikten sonra “Yeniden böl”e basın.</div>
-      </details>
-      <p class="metin-xs metin-soluk">Odalar: 1401–1405 ve 1407–1410. Numara veya durum değişirse yukarıdan düzeltebilirsiniz. Veriler bu cihazın tarayıcısında saklanır.</p>`;
+      <a class="kart gr-odalar-link" href="#odalar">
+        <span class="kart__baslik">${i('yatak')}Oda durumu, yoğunluk, izolasyon ve riskler</span>
+        <span class="rozet rozet-notr">${dolu.length}/${veri.odalar.length} dolu ${i('sag', 'ikon-sm')}</span>
+      </a>
+      <p class="metin-xs metin-soluk">Veriler bu cihazın tarayıcısında saklanır.</p>`;
   }
 
   /* Paylaşım metni (WhatsApp vb.) */
@@ -305,15 +303,6 @@
       k.ek.push({ id: 'e' + Date.now(), metin: metin_, oda, oncelik: f.get('oncelik'), kisi: (oda && k.oda[oda]) || kisi[0], bitti: false, saat: f.get('saat') || '', once: +f.get('once') });
       kaydet(); yenile('#ek-metin');
     });
-    on('[data-oda-dolu]', 'change', s => { veri.odalar[+s.dataset.odaDolu].dolu = s.value === '1'; kaydet(); yenile(`#${s.id}`); });
-    on('[data-oda-y]', 'change', s => { veri.odalar[+s.dataset.odaY].yogunluk = +s.value; kaydet(); yenile(`#${s.id}`); });
-    on('[data-oda-no]', 'change', s => {
-      const n = +s.dataset.odaNo, eski = veri.odalar[n].no, yeni = s.value.trim();
-      if (!yeni || veri.odalar.some((o, j) => j !== n && o.no === yeni)) { s.value = eski; return; }
-      veri.odalar[n].no = yeni; if (k.oda[eski]) { k.oda[yeni] = k.oda[eski]; delete k.oda[eski]; }
-      kaydet(); yenile(`#${s.id}`);
-    });
-    el.querySelectorAll('.gr-ayar').forEach(d => { if (sessionAyarAcik) d.open = true; d.addEventListener('toggle', () => { sessionAyarAcik = d.open; }); });
 
     on('[data-eylem]', 'click', b => {
       const e = b.dataset.eylem;
@@ -366,5 +355,65 @@
     return sonuc;
   }
 
-  window.GorevEkrani = { ciz, bagla, ozet, vardiyaOzeti };
+  /* ---------- Odalar ekranı ve hatırlatıcı için ---------- */
+  const bugunIso = () => iso(new Date());
+  function simdikiKayit(fn) {
+    if (!veri) yukle();
+    const onceT = secTarih, onceV = secVardiya;
+    [secTarih, secVardiya] = simdikiVardiya();
+    try { const [k, kisi] = hazirla(); return fn(k, kisi); } finally { secTarih = onceT; secVardiya = onceV; }
+  }
+  function odaListesi() { if (!veri) yukle(); return veri.odalar; }
+  function sorumlular() { return simdikiKayit((k, kisi) => { const r = {}; veri.odalar.forEach(o => { if (o.dolu && kisi.includes(k.oda[o.no])) r[o.no] = kisaAd(k.oda[o.no]); }); return r; }); }
+  function odaGuncelle(no, alanlar) { const o = veri.odalar.find(x => x.no === no); if (o) { Object.assign(o, alanlar); kaydet(); } }
+  const TEMIZ = { izolasyon: '', dusme: false, basi: false, npo: false, alerji: false, taburcuPlan: '', not: '' };
+  function hareket(no, tur) { (veri.odaHareket = veri.odaHareket || []).push({ no, tur, t: bugunIso(), saat: saatSimdi() }); if (veri.odaHareket.length > 1000) veri.odaHareket.shift(); }
+  function odaYatis(no) {
+    const o = veri.odalar.find(x => x.no === no); if (!o) return;
+    Object.assign(o, TEMIZ, { dolu: true, yatis: bugunIso(), yogunluk: o.yogunluk || 2 }); hareket(no, 'yatis');
+    simdikiKayit((k, kisi) => { if (kisi.length === 2) { const say = (id) => veri.odalar.filter(x => x.dolu && x.no !== no && k.oda[x.no] === id).length; k.oda[no] = say(kisi[0]) <= say(kisi[1]) ? kisi[0] : kisi[1]; } });
+    kaydet();
+  }
+  function odaTaburcu(no) {
+    const o = veri.odalar.find(x => x.no === no); if (!o) return;
+    Object.assign(o, TEMIZ, { dolu: false, yatis: '' }); hareket(no, 'taburcu');
+    simdikiKayit((k) => { delete k.oda[no]; }); kaydet();
+  }
+  function odaNoDegistir(eski, yeni) {
+    if (!yeni || veri.odalar.some(o => o.no === yeni)) return false;
+    const o = veri.odalar.find(x => x.no === eski); o.no = yeni;
+    Object.values(veri.kayitlar).forEach(k => { if (k.oda[eski]) { k.oda[yeni] = k.oda[eski]; delete k.oda[eski]; } });
+    kaydet(); return true;
+  }
+  function bugunHareket() { if (!veri) yukle(); const b = bugunIso(), h = (veri.odaHareket || []).filter(x => x.t === b); return { yatis: h.filter(x => x.tur === 'yatis').length, taburcu: h.filter(x => x.tur === 'taburcu').length }; }
+  function odaOzeti() {
+    if (!veri) yukle();
+    const dolu = veri.odalar.filter(o => o.dolu), b = bugunIso();
+    return {
+      dolu: dolu.length, toplam: veri.odalar.length,
+      izolasyon: dolu.filter(o => o.izolasyon).map(o => `${o.no} (${IZOL[o.izolasyon]})`),
+      dusme: dolu.filter(o => o.dusme).map(o => o.no), basi: dolu.filter(o => o.basi).map(o => o.no),
+      npo: dolu.filter(o => o.npo).map(o => o.no), alerji: dolu.filter(o => o.alerji).map(o => o.no),
+      taburcuBugun: dolu.filter(o => o.taburcuPlan && o.taburcuPlan.slice(0, 10) === b).map(o => `${o.no} ${o.taburcuPlan.slice(11, 16).replace(':', '.')}`),
+      ...bugunHareket()
+    };
+  }
+  /* Saatli ek görevler (bugün ve dünün gecesi) → hatırlatıcı */
+  function saatliGorevler() {
+    if (!veri) yukle();
+    const b = bugunIso(), dun = gunEkle(b, -1), sonuc = [];
+    [[dun, 'N'], [b, 'G'], [b, 'N']].forEach(([t, v]) => {
+      const k = veri.kayitlar[`${t}|${v}`]; if (!k) return;
+      k.ek.forEach(e => {
+        if (!e.saat || e.bitti || e.saat.includes('.')) return;
+        const gun = v === 'N' && e.saat < '08:00' ? gunEkle(t, 1) : t;
+        const randevu = new Date(`${gun}T${e.saat}:00`);
+        sonuc.push({ id: `g:${t}|${v}:${e.id}`, zaman: new Date(randevu.getTime() - (e.once || 0) * 60000), randevu,
+          baslik: `${e.oda ? 'Oda ' + e.oda + ' · ' : ''}${e.metin}`, metin: `Randevu ${e.saat.replace(':', '.')} · ${kisaAd(e.kisi)}`, link: '#gorevler' });
+      });
+    });
+    return sonuc;
+  }
+
+  window.GorevEkrani = { ciz, bagla, ozet, vardiyaOzeti, odaListesi, sorumlular, odaGuncelle, odaYatis, odaTaburcu, odaNoDegistir, odaOzeti, saatliGorevler, YOGUNLUK, IZOL };
 })();
