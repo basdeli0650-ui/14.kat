@@ -1,0 +1,46 @@
+/* 14. KAT — Görev Dağıtımı */
+
+.gr-kolon .kart__baslik .kullanici__avatar { width: 30px; height: 30px; font-size: var(--yazi-xs); }
+.gr-odalar { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--b-2); }
+.gr-oda {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 64px; padding: var(--b-2); cursor: pointer;
+  background: var(--renk-arka-plan); color: var(--renk-metin);
+  border: 1px solid var(--renk-kenar-guclu); border-radius: var(--kose-md);
+  transition: border-color var(--gecis), background var(--gecis);
+}
+.gr-oda:hover { border-color: var(--renk-mor-metin); background: var(--renk-yuzey-3); }
+.gr-oda__no { font-size: var(--yazi-lg); font-weight: var(--kalinlik-cok); font-variant-numeric: tabular-nums; }
+.gr-oda__y { font-size: var(--yazi-xs); font-weight: var(--kalinlik-kalin); display: inline-flex; align-items: center; gap: 4px; }
+.gr-oda__y::before { content: ""; width: 8px; height: 8px; border-radius: 50%; }
+.gr-oda[data-yogunluk="1"] .gr-oda__y { color: var(--renk-basari); }
+.gr-oda[data-yogunluk="1"] .gr-oda__y::before { background: var(--renk-basari); }
+.gr-oda[data-yogunluk="2"] .gr-oda__y { color: var(--renk-uyari); }
+.gr-oda[data-yogunluk="2"] .gr-oda__y::before { background: var(--renk-uyari); }
+.gr-oda[data-yogunluk="3"] .gr-oda__y { color: var(--renk-kritik); }
+.gr-oda[data-yogunluk="3"] .gr-oda__y::before { background: var(--renk-kritik); border-radius: 2px; transform: rotate(45deg); }
+
+.gr-mini { list-style: none; margin: var(--b-4) 0 0; padding: var(--b-3) 0 0; border-top: 1px solid var(--renk-kenar); display: flex; flex-direction: column; gap: 6px; font-size: var(--yazi-sm); color: var(--renk-metin-ikincil); }
+.gr-mini li { display: flex; align-items: center; gap: var(--b-2); }
+.gr-mini .ikon-sm { color: var(--renk-mor-metin); }
+
+.gr-arac { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--b-3); margin-top: calc(-1 * var(--b-2)); }
+
+.gr-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.gr-satir { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--b-2); padding: var(--b-2) 0; border-top: 1px solid var(--renk-kenar); }
+.gr-satir:first-child { border-top: 0; padding-top: 0; }
+.gr-satir .onay { flex: 1 1 180px; }
+.gr-satir.bitti .onay > span { color: var(--renk-metin-soluk); text-decoration: line-through; }
+.gr-satir__sag { display: flex; align-items: center; gap: var(--b-2); }
+.secim.gr-kucuk { width: auto; min-height: 36px; padding-top: 4px; padding-bottom: 4px; font-size: var(--yazi-sm); }
+
+.gr-ek-form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--b-3); margin-top: var(--b-4); padding-top: var(--b-4); border-top: 1px solid var(--renk-kenar); }
+
+.gr-ayar > summary { cursor: pointer; list-style: none; border-bottom: 0; }
+.gr-ayar > summary::-webkit-details-marker { display: none; }
+.gr-ayar[open] > summary { border-bottom: 1px solid var(--renk-kenar); }
+.gr-oda-no { max-width: 110px; }
+
+.gr-iki { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .gr-iki { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 420px) { .gr-ek-form { grid-template-columns: 1fr; } .gr-ek-form > * { grid-column: 1 / -1; } }

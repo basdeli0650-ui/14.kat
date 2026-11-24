@@ -1,0 +1,63 @@
+/* 14. KAT — Temel stiller */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; color-scheme: dark; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--renk-arka-plan);
+  color: var(--renk-metin);
+  font-family: var(--font-ana);
+  font-size: var(--yazi-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; font-weight: var(--kalinlik-kalin); }
+h1 { font-size: var(--yazi-2xl); }
+h2 { font-size: var(--yazi-xl); }
+h3 { font-size: var(--yazi-lg); }
+p  { margin: 0; }
+
+a { color: var(--renk-mor-metin); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--renk-altin-parlak); }
+
+img, svg { display: block; max-width: 100%; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: none; box-shadow: var(--odak-halka); border-radius: var(--kose-sm); }
+
+::selection { background: var(--renk-mor); color: var(--renk-metin); }
+
+/* Ekran okuyucuya özel metin */
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* İçeriğe atla bağlantısı */
+.atla {
+  position: absolute; left: var(--b-4); top: -60px; z-index: 100;
+  background: var(--renk-altin); color: var(--renk-arka-plan);
+  padding: var(--b-2) var(--b-4); border-radius: var(--kose-sm);
+  font-weight: var(--kalinlik-kalin); text-decoration: none;
+}
+.atla:focus { top: var(--b-4); }
+
+/* Yardımcı sınıflar */
+.metin-altin   { color: var(--renk-altin); }
+.metin-mor     { color: var(--renk-mor-metin); }
+.metin-ikincil { color: var(--renk-metin-ikincil); }
+.metin-soluk   { color: var(--renk-metin-soluk); }
+.metin-sm      { font-size: var(--yazi-sm); }
+.metin-xs      { font-size: var(--yazi-xs); }
+.rakam         { font-variant-numeric: tabular-nums; }
+
+.ikon { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; fill: none;
+        stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ikon-sm { width: 16px; height: 16px; }
+.ikon-lg { width: 24px; height: 24px; }

@@ -1,0 +1,84 @@
+/* ==========================================================
+   14. KAT — Tasarım belirteçleri (design tokens)
+   Bütün renkler, boşluklar ve tipografi BURADAN yönetilir.
+   Bileşenlerde doğrudan HEX yazılmaz; yalnızca bu değişkenler kullanılır.
+   ========================================================== */
+
+:root {
+  /* --- Marka paleti (talimattaki değerler) --- */
+  --renk-arka-plan:      #09090B; /* Ana arka plan */
+  --renk-kart:           #17131F; /* Kart ve panel */
+  --renk-mor:            #8B3DFF; /* Ana vurgu — zemin olarak kullan */
+  --renk-mor-koyu:       #5B21B6; /* İkincil mor */
+  --renk-altin:          #F5C542; /* Altın sarısı */
+  --renk-altin-parlak:   #FFD966; /* Parlak altın */
+  --renk-metin:          #F8F8FA; /* Ana metin */
+  --renk-metin-ikincil:  #B9B4C5; /* İkincil metin */
+
+  /* --- Erişilebilirlik için türetilmiş tonlar --- */
+  /* #8B3DFF koyu zeminde metin olarak 3.66:1 kalır (AA için 4.5 gerekir).
+     Mor YAZI, bağlantı ve ikonlarda bu açık ton kullanılır (7.04:1). */
+  --renk-mor-metin:      #B28CFF;
+  --renk-metin-soluk:    #8E889B; /* pasif / ipucu metni, 5.35:1 */
+
+  /* Yüzey katmanları */
+  --renk-yuzey-1:        #120F18; /* menü */
+  --renk-yuzey-2:        var(--renk-kart);
+  --renk-yuzey-3:        #211B2C; /* hover, tablo başlığı */
+  --renk-kenar:          #2A2336;
+  --renk-kenar-guclu:    #3B3249;
+  --renk-mor-zemin:      rgba(139, 61, 255, 0.14);
+  --renk-altin-zemin:    rgba(245, 197, 66, 0.12);
+
+  /* --- Durum renkleri (her zaman ikon + metinle birlikte) --- */
+  --renk-basari:         #4ADE80;
+  --renk-basari-zemin:   rgba(74, 222, 128, 0.12);
+  --renk-uyari:          #FB923C;
+  --renk-uyari-zemin:    rgba(251, 146, 60, 0.12);
+  --renk-kritik:         #F87171;
+  --renk-kritik-zemin:   rgba(248, 113, 113, 0.12);
+  --renk-bilgi:          var(--renk-mor-metin);
+  --renk-bilgi-zemin:    var(--renk-mor-zemin);
+
+  /* Odak halkası */
+  --odak-halka: 0 0 0 2px var(--renk-arka-plan), 0 0 0 4px var(--renk-altin);
+
+  /* --- Tipografi --- */
+  --font-ana: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-rakam: "Inter", "Segoe UI", system-ui, sans-serif;
+  --yazi-xs: 0.75rem;
+  --yazi-sm: 0.875rem;
+  --yazi-md: 1rem;
+  --yazi-lg: 1.125rem;
+  --yazi-xl: 1.375rem;
+  --yazi-2xl: 1.75rem;
+  --kalinlik-normal: 400;
+  --kalinlik-orta: 500;
+  --kalinlik-kalin: 600;
+  --kalinlik-cok: 700;
+
+  /* --- Boşluk ölçeği (4 px tabanlı) --- */
+  --b-1: 4px;  --b-2: 8px;  --b-3: 12px; --b-4: 16px;
+  --b-5: 20px; --b-6: 24px; --b-8: 32px; --b-10: 40px;
+
+  /* --- Köşe ve gölge --- */
+  --kose-sm: 8px;
+  --kose-md: 12px;
+  --kose-lg: 16px;
+  --kose-tam: 999px;
+  --golge-kart: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.35);
+  --golge-altin: 0 0 0 1px rgba(245,197,66,0.35); /* abartısız premium çizgi */
+
+  /* --- Yerleşim --- */
+  --menu-genislik: 264px;
+  --ust-bar-yukseklik: 64px;
+  --icerik-max: 1320px;
+  --dokunma-min: 44px; /* mobil dokunma hedefi */
+
+  /* Hareket — kısa ve sade */
+  --gecis: 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --gecis: 0ms; }
+}

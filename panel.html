@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>14. Kat</title>
+  <meta name="theme-color" content="#09090B">
+  <link rel="icon" href="public/branding/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="public/branding/logo-14kat-32.png">
+  <link rel="apple-touch-icon" href="public/branding/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="src/styles/tokens.css">
+  <link rel="stylesheet" href="src/styles/base.css">
+  <link rel="stylesheet" href="src/styles/components.css">
+  <link rel="stylesheet" href="src/styles/layout.css">
+  <link rel="stylesheet" href="src/styles/vardiya.css">
+  <link rel="stylesheet" href="src/styles/gorev.css">
+  <link rel="stylesheet" href="src/styles/ajanda.css">
+  <link rel="stylesheet" href="src/styles/stok.css">
+  <link rel="stylesheet" href="src/styles/miat.css">
+  <link rel="stylesheet" href="src/styles/asistan.css">
+</head>
+<body>
+  <div class="yukleme" id="yukleme" aria-hidden="true">
+    <img class="logo" src="public/branding/logo-14kat-256.png" alt="" width="120" height="120">
+    <div class="yukleme__cubuk"></div>
+  </div>
+
+  <a class="atla" href="#icerik">İçeriğe geç</a>
+
+  <div class="uygulama">
+    <nav class="menu" id="menu" aria-label="Ana menü">
+      <div class="menu__logo">
+        <a class="logo-blok" href="#panel">
+          <img class="logo" src="public/branding/logo-14kat-128.png" alt="" width="44" height="44">
+          <span><span class="logo-blok__ad">14. Kat</span><br><span class="logo-blok__alt">Servis Yönetimi</span></span>
+        </a>
+      </div>
+      <div id="menu-icerik"></div>
+      <div class="menu__alt">
+        <div class="kullanici">
+          <div class="kullanici__avatar" aria-hidden="true">SH</div>
+          <div><div class="kullanici__ad">Sorumlu Hemşire</div><div class="kullanici__rol">14. Kat</div></div>
+          <a class="btn btn-hayalet btn-ikon" href="index.html" aria-label="Çıkış yap" style="margin-left:auto"><svg class="ikon" aria-hidden="true"><use href="#i-cikis"/></svg></a>
+        </div>
+      </div>
+    </nav>
+    <div class="perde" id="perde" hidden></div>
+
+    <div class="ana">
+      <header class="ust-bar">
+        <button class="btn btn-hayalet btn-ikon menu-ac" id="menu-ac" type="button" aria-label="Menüyü aç" aria-controls="menu" aria-expanded="false"><svg class="ikon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        <span class="ust-bar__baslik" id="ust-baslik">Genel Bakış</span>
+        <div class="ust-bar__sag">
+          <span class="rozet rozet-altin ust-bar__gizle-mobil" id="vardiya-rozet">Gündüz vardiyası</span>
+          <button class="btn btn-hayalet btn-ikon" type="button" aria-label="Bildirimler, 3 yeni"><svg class="ikon" aria-hidden="true"><use href="#i-zil"/></svg></button>
+        </div>
+      </header>
+      <main class="icerik" id="icerik" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <nav class="alt-nav" id="alt-nav" aria-label="Hızlı menü"></nav>
+
+  <script src="src/js/ikonlar.js"></script>
+  <script src="src/js/vardiya-motor.js"></script>
+  <script src="src/js/vardiya-ekran.js"></script>
+  <script src="src/js/gorev-ekran.js"></script>
+  <script src="src/js/ajanda-ekran.js"></script>
+  <script src="src/js/stok-ekran.js"></script>
+  <script src="src/js/miat-ekran.js"></script>
+  <script src="src/js/asistan-ekran.js"></script>
+  <script src="src/js/ayarlar-ekran.js"></script>
+  <script src="src/js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      try { navigator.serviceWorker.register('sw.js'); } catch (e) { /* önbellek olmadan devam */ }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+/* 14. KAT — Asistan */
+
+.as-bolum { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--b-2); font-size: var(--yazi-lg); margin-top: var(--b-2); }
+.as-bolum .ikon { color: var(--renk-altin); align-self: center; }
+.as-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--b-4); align-items: start; }
+.as-kart .kart__baslik { font-size: var(--yazi-md); }
+.as-sonuc { margin-top: var(--b-4); display: flex; flex-direction: column; gap: var(--b-2); align-items: flex-start; }
+.as-metin {
+  width: 100%; margin: 0; max-height: 360px; overflow: auto;
+  padding: var(--b-3) var(--b-4); border-radius: var(--kose-md);
+  background: var(--renk-arka-plan); border: 1px solid var(--renk-kenar);
+  font-family: var(--font-ana); font-size: var(--yazi-sm); line-height: 1.55; white-space: pre-wrap; word-break: break-word; color: var(--renk-metin);
+}
+.as-ses { grid-column: 1 / -1; }
+.as-ses__ust { display: flex; flex-wrap: wrap; align-items: center; gap: var(--b-3); }
+.as-mik { min-height: 52px; padding: 0 var(--b-6); font-size: var(--yazi-md); }
+.as-nokta { width: 10px; height: 10px; border-radius: 50%; background: var(--renk-kritik); animation: as-nabiz 1s ease-in-out infinite; }
+@keyframes as-nabiz { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .as-nokta { animation: none; } }
+.as-metin.as-mono { font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: var(--yazi-xs); white-space: pre; }

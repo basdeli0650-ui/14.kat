@@ -1,0 +1,45 @@
+/* 14. KAT — Stok ve Sarf Malzeme */
+
+.st-ozet { text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.st-ozet:hover { border-color: var(--renk-kenar-guclu); }
+.st-ozet[aria-pressed="true"] { border-color: var(--renk-mor); }
+
+.st-arac { flex-direction: column; align-items: stretch; }
+.st-filtre { display: flex; gap: var(--b-1); overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.st-filtre .sekme { border: 1px solid var(--renk-kenar); flex: none; }
+.st-filtre .sekme[aria-pressed="true"] { background: var(--renk-mor); color: var(--renk-metin); border-color: var(--renk-mor); }
+.st-arama { display: flex; flex-wrap: wrap; align-items: center; gap: var(--b-3); }
+.st-arama .girdi { flex: 1 1 220px; max-width: 360px; }
+
+.st-tablo td { vertical-align: middle; }
+.st-ad { display: flex; flex-direction: column; gap: 2px; }
+.st-acil { align-self: flex-start; margin-top: 2px; }
+.st-sayi { width: 84px; min-height: 40px; padding: 6px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+.st-seviye { min-width: 120px; }
+.st-sil { width: 1%; white-space: nowrap; text-align: right; }
+
+.st-siparis { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.st-siparis li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--b-2); padding: var(--b-2) 0; border-top: 1px solid var(--renk-kenar); }
+.st-siparis li:first-child { border-top: 0; }
+.st-siparis__ad { display: flex; flex-wrap: wrap; align-items: center; gap: var(--b-2); }
+.st-siparis__m { display: flex; align-items: center; gap: var(--b-2); }
+
+.st-ekle { display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: var(--b-3); align-items: end; }
+.st-gun { display: inline-flex; align-items: center; gap: var(--b-2); }
+
+@media (max-width: 900px) { .st-ekle { grid-template-columns: 1fr 1fr; } .st-ekle > .alan:first-child { grid-column: 1 / -1; } }
+@media (max-width: 640px) {
+  /* Mobil: malzeme adı üstte, üç sayı yan yana, durum altta */
+  .st-tablo tr { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--b-2); row-gap: 6px; }
+  .st-tablo td { display: flex; flex-direction: column; align-items: stretch; text-align: left; gap: 2px; padding: 0; }
+  .st-tablo td::before { text-align: left; }
+  .st-tablo td[data-etiket="Malzeme"], .st-tablo td[data-etiket="Durum"] { grid-column: 1 / -1; }
+  .st-tablo td[data-etiket="Malzeme"] { padding-right: 48px; }
+  .st-tablo td[data-etiket="Malzeme"]::before, .st-tablo td.st-sil::before { content: none; }
+  .st-tablo td[data-etiket="Durum"] { flex-direction: row; align-items: center; justify-content: space-between; }
+  .st-tablo td[data-etiket="Durum"]::before { content: none; }
+  .st-tablo td.st-seviye { display: none; }
+  .st-tablo td.st-sil { position: absolute; top: 8px; right: 12px; width: auto; }
+  .st-sayi { width: 100%; text-align: center; }
+  .st-tablo td[colspan] { grid-column: 1 / -1; }
+}
