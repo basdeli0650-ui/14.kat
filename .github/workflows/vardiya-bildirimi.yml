@@ -1,0 +1,57 @@
+# 14. KAT — Her gün 06.00 ve 16.00 (Türkiye saati) vardiya bildirimi
+# Sunucu yalnızca "bildirim göster" sinyali gönderir; isimler telefondaki kayıttan okunur.
+# Gerekli gizli anahtar: PUSH_AYAR (uygulama → Ayarlar → Vardiya bildirimleri → Kopyala)
+name: Vardiya bildirimi
+
+on:
+  schedule:
+    - cron: "0 3 * * *"    # 06.00 TRT (UTC+3)
+    - cron: "0 13 * * *"   # 16.00 TRT
+    - cron: "17 4 1 * *"   # ayda bir: deponun etkin kalması için canlılık kaydı
+  workflow_dispatch:
+    inputs:
+      tur:
+        description: "Bildirim türü"
+        type: choice
+        options: [sabah, aksam]
+        default: sabah
+
+permissions:
+  contents: write
+
+jobs:
+  bildir:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule != '17 4 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bildirim gönder
+        env:
+          PUSH_AYAR: ${{ secrets.PUSH_AYAR }}
+          OLAY: ${{ github.event_name }}
+          ZAMAN: ${{ github.event.schedule }}
+          SECIM: ${{ inputs.tur }}
+        run: |
+          if [ -z "$PUSH_AYAR" ]; then echo "::warning::PUSH_AYAR gizli anahtarı eklenmemiş"; exit 0; fi
+          ozel=$(echo "$PUSH_AYAR" | jq -r '.vapid.ozel'); echo "::add-mask::$ozel"
+          acik=$(echo "$PUSH_AYAR" | jq -r '.vapid.acik')
+          endpoint=$(echo "$PUSH_AYAR" | jq -r '.abonelik.endpoint'); echo "::add-mask::$endpoint"
+          p256=$(echo "$PUSH_AYAR" | jq -r '.abonelik.keys.p256dh')
+          auth=$(echo "$PUSH_AYAR" | jq -r '.abonelik.keys.auth'); echo "::add-mask::$auth"
+          if [ "$OLAY" = "workflow_dispatch" ]; then tur="$SECIM"; elif [ "$ZAMAN" = "0 3 * * *" ]; then tur="sabah"; else tur="aksam"; fi
+          npx --yes web-push@3.6.7 send-notification \
+            --endpoint="$endpoint" --key="$p256" --auth="$auth" \
+            --vapid-subject="mailto:bildirim@example.com" --vapid-pubkey="$acik" --vapid-pvtkey="$ozel" \
+            --payload="{\"tur\":\"vardiya\",\"zaman\":\"$tur\"}" --ttl=7200 > /dev/null
+          echo "Gönderildi: $tur"
+
+  canli-tut:
+    if: github.event.schedule == '17 4 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Canlılık kaydı
+        run: |
+          date -u +%Y-%m-%dT%H:%MZ > .github/canli.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add .github/canli.txt && git commit -m "Aylık canlılık kaydı" && git push
