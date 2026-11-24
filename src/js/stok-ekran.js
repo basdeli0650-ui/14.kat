@@ -99,7 +99,7 @@
     const ara = filtre.ara.toLocaleLowerCase('tr');
     const liste = veri.kalemler.filter(k =>
       (!filtre.kat || k.kategori === filtre.kat) &&
-      (!ara || k.ad.toLocaleLowerCase('tr').includes(ara)) &&
+      (!ara || k.ad.toLocaleLowerCase('tr').includes(ara) || (k.kod || '').toLocaleLowerCase('tr').includes(ara)) &&
       (!filtre.sadeceEksik || ['kritik', 'azaliyor'].includes(durum(k))));
     const kritikAcil = veri.kalemler.filter(k => k.kritik && durum(k) === 'kritik');
 
@@ -112,7 +112,7 @@
       const oran = k.mevcut == null || !hedef ? 0 : Math.min(100, Math.round(k.mevcut / hedef * 100));
       return `<tr>
         <td data-etiket="Malzeme"><div class="st-ad"><strong>${esc(k.ad)}</strong>${k.kritik ? ' <span class="rozet rozet-kritik st-acil">Acil arabası</span>' : ''}
-          <span class="metin-xs metin-soluk">${esc(k.birim)}${aylik(k) ? ' · aylık sayım' : ''}${k.sayim ? ` · ${gunFark(k.sayim, bugun()) === 0 ? 'bugün sayıldı' : gunFark(k.sayim, bugun()) + ' gün önce sayıldı'}` : ''}</span></div></td>
+          <span class="metin-xs metin-soluk">${esc(k.birim)}${k.kod ? ' · ' + esc(k.kod) : ''}${aylik(k) ? ' · aylık sayım' : ''}${k.sayim ? ` · ${gunFark(k.sayim, bugun()) === 0 ? 'bugün sayıldı' : gunFark(k.sayim, bugun()) + ' gün önce sayıldı'}` : ''}</span></div></td>
         <td data-etiket="Mevcut" class="sayi">${sayiGir(k, 'mevcut', 'mevcut')}</td>
         <td data-etiket="Alt sınır" class="sayi">${sayiGir(k, 'min', 'alt sınır')}</td>
         <td data-etiket="Haftalık hedef" class="sayi">${sayiGir(k, 'hedef', 'haftalık hedef')}</td>
@@ -179,7 +179,7 @@
           </div>
           <div class="st-arama">
             <label class="sr-only" for="st-ara">Malzeme ara</label>
-            <input id="st-ara" class="girdi" type="search" placeholder="Malzeme ara" value="${esc(filtre.ara)}">
+            <input id="st-ara" class="girdi" type="search" placeholder="Malzeme adı veya kodu ara" value="${esc(filtre.ara)}">
             <label class="onay"><input type="checkbox" data-eksik${filtre.sadeceEksik ? ' checked' : ''}> Yalnızca eksikler</label>
           </div>
         </div>
