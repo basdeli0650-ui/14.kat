@@ -115,8 +115,11 @@
           </div>
           ${b ? `<div class="uyari uyari-uyari" role="alertdialog" aria-label="Geri yükleme onayı" style="margin-top:16px">${i('uyari')}<div>
               <div class="uyari__baslik">${esc(durum.dosyaAd)} · ${b.tarih ? trTarih(b.tarih) : 'tarih yok'} tarihli yedek</div>
-              <div class="uyari__metin">İçerik: ${Object.keys(b.veri).map(x => MODUL[x] || x).join(', ')}. Bu cihazdaki mevcut kayıtların yerine geçecek.</div>
-              <div class="vrd-adaylar"><button class="btn btn-tehlike btn-sm" type="button" data-geri-evet>Evet, geri yükle</button><button class="btn btn-hayalet btn-sm" type="button" data-geri-hayir>Vazgeç</button></div>
+              <div class="uyari__metin">Hangi bölümler alınsın? Seçilenler bu cihazdakilerin yerine geçer, seçilmeyenlere dokunulmaz.</div>
+              <fieldset class="od-riskler ps-tercih" style="margin-top:8px"><legend class="sr-only">Geri yüklenecek bölümler</legend>
+                ${Object.keys(b.veri).map(x => `<label class="onay"><input type="checkbox" data-bolum="${esc(x)}"${b.secili.includes(x) ? ' checked' : ''}> ${esc(MODUL[x] || x)}</label>`).join('')}
+              </fieldset>
+              <div class="vrd-adaylar"><button class="btn btn-tehlike btn-sm" type="button" data-geri-evet${b.secili.length ? '' : ' disabled'}>Seçilenleri geri yükle</button><button class="btn btn-hayalet btn-sm" type="button" data-geri-hayir>Vazgeç</button></div>
             </div></div>` : ''}
         </div>
         <div class="kart__alt metin-xs metin-ikincil">Bu cihazda ${k.length} modül verisi · yaklaşık ${Math.max(1, Math.round(boyut / 1024))} KB</div>
@@ -230,7 +233,7 @@
           if (j.uygulama !== '14. Kat' || !j.veri || typeof j.veri !== 'object') throw new Error('biçim');
           const temiz = {}; Object.keys(j.veri).forEach(k => { if (k.startsWith(ON_EK) && !HARIC.includes(k)) temiz[k] = j.veri[k]; });
           if (!Object.keys(temiz).length) throw new Error('boş');
-          durum = { mesaj: '', tur: '', bekleyen: { tarih: j.tarih, veri: temiz }, dosyaAd: f.name };
+          durum = { mesaj: '', tur: '', bekleyen: { tarih: j.tarih, veri: temiz, secili: Object.keys(temiz) }, dosyaAd: f.name };
           yenile('[data-geri-hayir]');
         } catch (e) { durum = { mesaj: 'Bu dosya bir 14. Kat yedeği değil veya bozuk.', tur: 'kritik', bekleyen: null }; yenile(); }
       };
@@ -239,14 +242,17 @@
     const ev = el.querySelector('[data-geri-evet]');
     if (ev) ev.addEventListener('click', () => {
       const b = durum.bekleyen; let ok = true;
-      anahtarlar().forEach(k => { try { localStorage.removeItem(k); } catch (e) { ok = false; } });
-      Object.entries(b.veri).forEach(([k, v]) => { if (!yaz(k, JSON.stringify(v))) ok = false; });
+      b.secili.forEach(k => { if (!yaz(k, JSON.stringify(b.veri[k]))) ok = false; });
       if (ok) { sessionStorage && (() => { try { sessionStorage.setItem('14kat.geriYuklendi', '1'); } catch (e) { /* */ } })(); location.reload(); }
       else { durum = { mesaj: 'Geri yükleme tamamlanamadı (depolama alanı). Tarayıcı ayarlarını kontrol edin.', tur: 'kritik', bekleyen: null }; yenile(); }
     });
+    el.querySelectorAll('[data-bolum]').forEach(c => c.addEventListener('change', () => {
+      const b = durum.bekleyen; b.secili = c.checked ? [...new Set([...b.secili, c.dataset.bolum])] : b.secili.filter(x => x !== c.dataset.bolum);
+      yenile(`[data-bolum="${c.dataset.bolum}"]`);
+    }));
     const eh = el.querySelector('[data-geri-hayir]');
     if (eh) eh.addEventListener('click', () => { durum = { mesaj: '', tur: '', bekleyen: null }; yenile(); });
-    try { if (sessionStorage.getItem('14kat.geriYuklendi')) { sessionStorage.removeItem('14kat.geriYuklendi'); durum = { mesaj: 'Yedek geri yüklendi.', tur: 'basari', bekleyen: null }; yenile(); } } catch (e) { /* */ }
+    try { if (sessionStorage.getItem('14kat.geriYuklendi')) { sessionStorage.removeItem('14kat.geriYuklendi'); durum = { mesaj: 'Seçilen bölümler geri yüklendi.', tur: 'basari', bekleyen: null }; yenile(); } } catch (e) { /* */ }
   }
 
   window.AyarlarEkrani = { ciz, bagla, sonYedekGun, veriVar: () => anahtarlar().length > 0 };
