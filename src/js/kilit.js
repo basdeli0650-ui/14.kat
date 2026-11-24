@@ -62,6 +62,7 @@
     },
     /* Panelde: arka planda uzun kalınca kilitle */
     izle() {
+      sil(ARKA, sessionStorage); // sayfa yeniden yüklendiyse eski kaydı temizle
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) yaz(ARKA, String(Date.now()), sessionStorage);
         else {
