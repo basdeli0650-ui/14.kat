@@ -7,7 +7,7 @@
   const ON_EK = '14kat.';
   const AYAR = '14kat.ayar.v1';
   const HARIC = [AYAR, '14kat.pin.v1', '14kat.pinDeneme', '14kat.hatirlatma.v1']; // yedeğe girmez, geri yüklemede silinmez
-  let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' }, pinMesaj = null;
+  let durum = { mesaj: '', tur: '', bekleyen: null, dosyaAd: '' }, pinMesaj = null, denemeMesaj = '';
 
   const i = (a, s = '') => `<svg class="ikon ${s}" aria-hidden="true"><use href="#i-${a}"/></svg>`;
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -23,6 +23,9 @@
   const MODUL = { '14kat.vardiya.v1': 'Vardiya ve personel', '14kat.gorev.v1': 'Görev dağıtımı', '14kat.ajanda.v1': 'Ajanda', '14kat.stok.v1': 'Stok ve sarf', '14kat.miat.v1': 'Miat ve sıcaklık' };
 
   function ciz() {
+    const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    const kurulumIpucu = standalone ? '' : `<div class="uyari uyari-bilgi" style="margin-top:12px">${i('bilgi')}<div><div class="uyari__baslik">Uygulama tarayıcı içinde açık</div>
+      <div class="uyari__metin">Telefonun bildirim listesinde “14. Kat” olarak görünmesi için Chrome ile açıp menü (⋮) → <strong>Uygulamayı yükle</strong> deyin (“Ana ekrana ekle” yalnızca kısayol oluşturur). Sonra ana ekrandaki 14. Kat simgesinden açıp buradan izin verin.</div></div></div>`;
     const bd = window.Hatirlatici ? window.Hatirlatici.bildirimDurumu() : 'yok';
     const k = anahtarlar(), gun = sonYedekGun(), boyut = k.reduce((t, x) => t + (oku(x) || '').length, 0);
     const b = durum.bekleyen;
@@ -70,7 +73,9 @@
         <div class="kart__govde">
           <p class="metin-sm metin-ikincil">Uygulama açıkken saatli görevler (SMS zamanında) ve ajandadaki saatli etkinlikler (15 dk önce) ekranda uyarı ve titreşimle hatırlatılır. Bildirim izni verirseniz uygulama arka plandayken de telefon bildirimi gelir.</p>
           ${bd === 'default' ? `<div class="vrd-eylemler" style="margin-top:12px"><button class="btn btn-ikincil btn-sm" type="button" data-bildirim>${i('zil', 'ikon-sm')}Bildirimlere izin ver</button></div>` : ''}
-          ${bd === 'denied' ? '<p class="alan__ipucu" style="margin-top:8px">İzni açmak için: tarayıcı ayarları → Site ayarları → Bildirimler.</p>' : ''}
+          ${bd === 'granted' ? `<div class="vrd-eylemler" style="margin-top:12px"><button class="btn btn-ikincil btn-sm" type="button" data-deneme>${i('zil', 'ikon-sm')}Deneme bildirimi gönder</button>${denemeMesaj ? `<span class="metin-sm ${denemeMesaj === 'ok' ? 'metin-ikincil' : ''}" ${denemeMesaj === 'ok' ? '' : 'style="color:var(--renk-kritik)"'}>${denemeMesaj === 'ok' ? 'Gönderildi — bildirim çubuğuna bakın.' : esc(denemeMesaj)}</span>` : ''}</div>` : ''}
+          ${bd === 'denied' ? '<p class="alan__ipucu" style="margin-top:8px">İzin engellenmiş. Açmak için: telefon Ayarlar → Uygulamalar → 14. Kat (veya Chrome) → Bildirimler → İzin ver.</p>' : ''}
+          ${kurulumIpucu}
           <p class="alan__ipucu" style="margin-top:8px">Uygulama tamamen kapalıyken hatırlatma için SMS'i Mesajlar'da zamanlayın.</p>
         </div>
       </section>
@@ -89,6 +94,8 @@
   function yenile(odak) { const el = document.getElementById('icerik'); el.innerHTML = ciz(); bagla(el); if (odak) { const o = el.querySelector(odak); if (o) o.focus(); } }
 
   function bagla(el) {
+    const db = el.querySelector('[data-deneme]');
+    if (db) db.addEventListener('click', async () => { denemeMesaj = await window.Hatirlatici.deneme(); yenile('[data-deneme]'); });
     const bb = el.querySelector('[data-bildirim]');
     if (bb) bb.addEventListener('click', async () => { await window.Hatirlatici.bildirimIzni(); yenile(); });
     const kb = el.querySelector('[data-kilitle]');

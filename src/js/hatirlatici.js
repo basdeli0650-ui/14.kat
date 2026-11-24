@@ -90,6 +90,16 @@
   const Hatirlatici = {
     baslat() { kontrol(); setInterval(kontrol, 20000); document.addEventListener('visibilitychange', () => { if (!document.hidden) kontrol(); }); window.addEventListener('hashchange', kontrol); },
     kontrol,
+    async deneme() {
+      if (!('Notification' in window)) return 'Bu tarayıcı bildirim desteklemiyor.';
+      if (Notification.permission !== 'granted') return 'Önce bildirim izni verin.';
+      const sec = { body: 'Bildirimler çalışıyor. Saatli görevler böyle hatırlatılacak.', icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/logo-14kat-64.png', tag: 'deneme', vibrate: [200, 100, 200] };
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) { const r = await navigator.serviceWorker.ready; await r.showNotification('14. Kat', sec); }
+        else new Notification('14. Kat', sec);
+        return 'ok';
+      } catch (e) { return 'Bildirim gösterilemedi. Uygulamayı Chrome ile “Uygulamayı yükle” diyerek kurun.'; }
+    },
     bildirimDurumu() { return !('Notification' in window) ? 'yok' : Notification.permission; },
     async bildirimIzni() { try { return await Notification.requestPermission(); } catch (e) { return 'yok'; } }
   };

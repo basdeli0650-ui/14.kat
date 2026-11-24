@@ -1,6 +1,6 @@
 /* 14. KAT — çevrimdışı çalışma için önbellek (service worker)
    Dosya değiştiğinde SURUM'ü artırın. */
-const SURUM = '14kat-v5';
+const SURUM = '14kat-v6';
 const DOSYALAR = [
   "./",
   "index.html",
@@ -59,4 +59,13 @@ self.addEventListener('fetch', (e) => {
     fetch(e.request).then((r) => { const kopya = r.clone(); caches.open(SURUM).then((c) => c.put(e.request, kopya)); return r; })
       .catch(() => caches.match(e.request, { ignoreSearch: true }))
   );
+});
+
+/* Bildirime dokununca uygulamayı öne getir / aç */
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((l) => {
+    for (const c of l) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('panel.html');
+  }));
 });
