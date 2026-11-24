@@ -26,6 +26,7 @@ ya da klasörde basit bir sunucu başlatın:
 `public/branding/logo-14kat-orijinal.png` kullanıcının verdiği orijinal dosyadır, değiştirilmez.
 Diğer dosyalar bu dosyanın yalnızca küçültülmüş kopyalarıdır:
 favicon.ico (16/32/48), 16–512 px PNG, apple-touch-icon (180), maskable 512.
+Bildirim simgesi (`bildirim-simge-72/96.png`): Android durum çubuğu tek renk istediği için orijinal logodaki altın “14” ayıklanarak üretilmiş beyaz/şeffaf maske.
 
 ## Renk kuralları
 - Kodda doğrudan HEX yazılmaz; `tokens.css` değişkenleri kullanılır.

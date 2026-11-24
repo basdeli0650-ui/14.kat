@@ -81,7 +81,7 @@
   function bildirim(h) {
     try {
       if (!('Notification' in window) || Notification.permission !== 'granted') return;
-      const sec = { body: `${h.metin} · ${kalanMetin(h)}`, icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/logo-14kat-64.png', tag: h.id, vibrate: [250, 120, 250] };
+      const sec = { body: `${h.metin} · ${kalanMetin(h)}`, icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/bildirim-simge-96.png', tag: h.id, vibrate: [250, 120, 250] };
       if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.ready.then(r => r.showNotification(h.baslik, sec));
       else new Notification(h.baslik, sec);
     } catch (e) { /* bildirim yoksa ekrandaki uyarı yeterli */ }
@@ -93,7 +93,7 @@
     async deneme() {
       if (!('Notification' in window)) return 'Bu tarayıcı bildirim desteklemiyor.';
       if (Notification.permission !== 'granted') return 'Önce bildirim izni verin.';
-      const sec = { body: 'Bildirimler çalışıyor. Saatli görevler böyle hatırlatılacak.', icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/logo-14kat-64.png', tag: 'deneme', vibrate: [200, 100, 200] };
+      const sec = { body: 'Bildirimler çalışıyor. Saatli görevler böyle hatırlatılacak.', icon: 'public/branding/logo-14kat-192.png', badge: 'public/branding/bildirim-simge-96.png', tag: 'deneme', vibrate: [200, 100, 200] };
       try {
         if (navigator.serviceWorker && navigator.serviceWorker.controller) { const r = await navigator.serviceWorker.ready; await r.showNotification('14. Kat', sec); }
         else new Notification('14. Kat', sec);

@@ -1,6 +1,6 @@
 /* 14. KAT — çevrimdışı çalışma için önbellek (service worker)
    Dosya değiştiğinde SURUM'ü artırın. */
-const SURUM = '14kat-v6';
+const SURUM = '14kat-v7';
 const DOSYALAR = [
   "./",
   "index.html",
@@ -32,6 +32,8 @@ const DOSYALAR = [
   "src/js/hatirlatici.js",
   "src/js/app.js",
   "public/branding/apple-touch-icon.png",
+  "public/branding/bildirim-simge-72.png",
+  "public/branding/bildirim-simge-96.png",
   "public/branding/favicon.ico",
   "public/branding/logo-14kat-128.png",
   "public/branding/logo-14kat-16.png",
