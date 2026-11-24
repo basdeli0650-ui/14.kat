@@ -43,3 +43,34 @@
   .st-sayi { width: 100%; text-align: center; }
   .st-tablo td[colspan] { grid-column: 1 / -1; }
 }
+
+/* Ana gruplar */
+.st-gruplar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--b-2); }
+.st-grup { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--b-3); min-height: 60px; text-align: left; cursor: pointer;
+  background: var(--renk-arka-plan); color: var(--renk-metin); border: 1px solid var(--renk-kenar-guclu); border-radius: var(--kose-md); font: inherit; }
+.st-grup:hover { border-color: var(--renk-mor-metin); }
+.st-grup[aria-selected="true"] { background: var(--renk-mor); border-color: var(--renk-mor); }
+.st-grup__ad { font-weight: var(--kalinlik-kalin); font-size: var(--yazi-sm); }
+.st-grup__say { font-size: var(--yazi-xs); color: var(--renk-metin-ikincil); }
+.st-grup[aria-selected="true"] .st-grup__say { color: var(--renk-metin); }
+.st-grup__kritik { color: var(--renk-kritik); font-weight: var(--kalinlik-kalin); }
+.st-grup[aria-selected="true"] .st-grup__kritik { color: var(--renk-altin-parlak); }
+button.st-ad { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; }
+button.st-ad:hover strong { color: var(--renk-mor-metin); }
+@media (max-width: 640px) {
+  .st-gruplar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Kompakt satır: ad + mevcut; alt sınır/hedef/sil yalnızca açık satırda */
+  .st-tablo tr { grid-template-columns: minmax(0, 1fr) 96px; row-gap: 4px; padding: var(--b-2) var(--b-4); }
+  .st-tablo td[data-etiket="Malzeme"] { grid-column: 1; grid-row: 1; padding-right: 0; }
+  .st-tablo td[data-etiket="Mevcut"] { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  .st-tablo td[data-etiket="Mevcut"]::before { content: none; }
+  .st-tablo td[data-etiket="Durum"] { grid-column: 1; grid-row: 2; justify-content: flex-start; }
+  .st-tablo td[data-etiket="Alt sınır"], .st-tablo td[data-etiket="Haftalık hedef"], .st-tablo td.st-sil { display: none; }
+  .st-tablo tr.acik { grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--renk-yuzey-3); }
+  .st-tablo tr.acik td[data-etiket="Malzeme"] { grid-column: 1 / 3; }
+  .st-tablo tr.acik td[data-etiket="Mevcut"] { grid-column: 3; grid-row: 1 / span 2; }
+  .st-tablo tr.acik td[data-etiket="Durum"] { grid-column: 1 / 3; }
+  .st-tablo tr.acik td[data-etiket="Alt sınır"], .st-tablo tr.acik td[data-etiket="Haftalık hedef"] { display: flex; grid-row: 3; }
+  .st-tablo tr.acik td.st-sil { display: flex; position: static; grid-column: 3; grid-row: 3; align-self: end; justify-content: flex-end; }
+  .st-tablo .rozet { font-size: 11px; padding: 2px 8px; }
+}
