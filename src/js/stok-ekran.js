@@ -34,11 +34,33 @@
   let acikKalem = null;
   const GRUPLAR = [['sarf', 'Sarf malzeme'], ['ilac', 'İlaçlar'], ['serum', 'Serumlar'], ['acil', 'Acil arabası']];
   const anaGrup = (k) => k.kategori === 'Acil arabası' ? 'acil' : k.kategori === 'İlaç' ? 'ilac' : k.kategori === 'Sıvılar' ? 'serum' : 'sarf';
+  const DEPO = '14kat.depoSayim.v1';
+  let depo = null, depoAcik = false, depoFiltre = 'fark', depoMesaj = '', depoIsleSor = false, depoSilSor = false, depoKopya = '';
+  function depoYukle() { try { const s = localStorage.getItem(DEPO); depo = s ? JSON.parse(s) : null; } catch (e) { depo = null; } if (depo && !Array.isArray(depo.satirlar)) depo = null; }
+  function depoKaydet() { try { depo ? localStorage.setItem(DEPO, JSON.stringify(depo)) : localStorage.removeItem(DEPO); } catch (e) { /* */ } }
+  /* Kağıttaki satırın stoktaki karşılığı: önce tam ad, sonra (tekse) kod */
+  function depoKalem(r) {
+    if (!r.sistemAd && !r.kod) return null;
+    const servis = veri.kalemler.filter(k => !aylik(k)); // acil arabası ayrı sayılır, depo sayımına girmez
+    return servis.find(k => k.ad === r.sistemAd) || (r.kod ? (l => l.length === 1 ? l[0] : null)(servis.filter(k => k.kod === r.kod)) : null);
+  }
+  /* Fark = sayılan − sistem. Stoğa işlenmişse işlemeden önceki sistem miktarı esas alınır. */
+  function depoFark(r) {
+    const k = depoKalem(r); if (!k || r.birimFarki || r.sayilan == null) return null;
+    const sis = r.islendi ? r.islendi.once : k.mevcut; return sis == null ? null : { k, sis, f: r.sayilan - sis };
+  }
+  function depoOzet() {
+    if (!depo) return null; const o = { eksik: 0, fazla: 0, esit: 0, yok: 0, bekleyen: 0 };
+    depo.satirlar.forEach(r => { const d = depoFark(r); if (!d) o.yok++; else { o[d.f < 0 ? 'eksik' : d.f > 0 ? 'fazla' : 'esit']++; if (d.f && !r.islendi) o.bekleyen++; } });
+    return o;
+  }
+  const isaretli = (n) => (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n);
   let veri, filtre = { grup: 'sarf', kat: '', ara: '', sadeceEksik: false }, siparisAcik = false, siparisTaslak = null, silSor = null, kopyaDurum = '', ekleAcik = false;
   function yukle() {
     try { const s = localStorage.getItem(ANAHTAR); veri = s ? JSON.parse(s) : null; } catch (e) { veri = null; }
     if (!veri || veri.surum !== 1) veri = tohum();
     if (!veri.hareketler) veri.hareketler = [];
+    depoYukle();
   }
   function hareket(k, tur, once, sonra) {
     veri.hareketler.push({ id: k.id, t: bugun(), tur, once, sonra });
@@ -108,18 +130,21 @@
     const grupSay = (g) => { const l = veri.kalemler.filter(k => anaGrup(k) === g); return [l.length, l.filter(k => durum(k) === 'kritik').length]; };
     const altGruplar = [...new Set(veri.kalemler.filter(k => anaGrup(k) === filtre.grup).map(k => k.kategori))];
     const kritikAcil = veri.kalemler.filter(k => k.kritik && durum(k) === 'kritik');
+    const dOz = depoOzet();
 
     const sayiGir = (k, alan, etiket) => `<label class="sr-only" for="${alan}-${k.id}">${esc(k.ad)} — ${etiket}</label>
       <input id="${alan}-${k.id}" class="girdi st-sayi" type="number" inputmode="numeric" min="0" step="1" data-alan="${alan}" data-id="${k.id}" value="${k[alan] == null ? '' : k[alan]}" placeholder="—">`;
 
+    const depoHarita = new Map();
+    if (depo) depo.satirlar.forEach(r => { const d = depoFark(r); if (d && d.f && !r.islendi) depoHarita.set(d.k.id, { r, ...d }); });
     const satirlar = liste.map(k => {
-      const d = durum(k);
+      const d = durum(k), dp = depoHarita.get(k.id);
       const hedef = k.hedef != null ? k.hedef : (k.min != null ? k.min * 2 : null);
       const oran = k.mevcut == null || !hedef ? 0 : Math.min(100, Math.round(k.mevcut / hedef * 100));
       const acik = acikKalem === k.id;
       return `<tr class="${acik ? 'acik' : ''}">
         <td data-etiket="Malzeme"><button class="st-ad" type="button" data-ac-kalem="${k.id}" aria-expanded="${acik}"><strong>${esc(k.ad)}</strong>${k.kritik && filtre.grup !== 'acil' || (k.kritik && ara) ? ' <span class="rozet rozet-kritik st-acil">Acil arabası</span>' : ''}
-          <span class="metin-xs metin-soluk">${ara ? esc(k.kategori) + ' · ' : ''}${esc(k.birim)}${k.kod ? ' · ' + esc(k.kod) : ''}${aylik(k) ? ' · aylık sayım' : ''}${k.sayim ? ` · ${gunFark(k.sayim, bugun()) === 0 ? 'bugün sayıldı' : gunFark(k.sayim, bugun()) + ' gün önce sayıldı'}` : ''}${k.min != null ? ` · alt sınır ${k.min}` : ''}</span></button></td>
+          <span class="metin-xs metin-soluk">${ara ? esc(k.kategori) + ' · ' : ''}${esc(k.birim)}${k.kod ? ' · ' + esc(k.kod) : ''}${aylik(k) ? ' · aylık sayım' : ''}${k.sayim ? ` · ${gunFark(k.sayim, bugun()) === 0 ? 'bugün sayıldı' : gunFark(k.sayim, bugun()) + ' gün önce sayıldı'}` : ''}${k.min != null ? ` · alt sınır ${k.min}` : ''}</span>${dp ? `<span class="rozet ${dp.f < 0 ? 'rozet-kritik' : 'rozet-uyari'} st-acil">Depo sayımı ${dp.r.sayilan} · fark ${isaretli(dp.f)}</span>` : ''}</button></td>
         <td data-etiket="Mevcut" class="sayi">${sayiGir(k, 'mevcut', 'mevcut')}</td>
         <td data-etiket="Alt sınır" class="sayi">${sayiGir(k, 'min', 'alt sınır')}</td>
         <td data-etiket="Haftalık hedef" class="sayi">${sayiGir(k, 'hedef', 'haftalık hedef')}</td>
@@ -141,6 +166,7 @@
           <p class="sayfa-bas__aciklama">${veri.kalemler.length} kalem · Sonraki sipariş: <span class="metin-altin">${uzunTarih(sipTarih)}${sipFark === 0 ? ' (bugün)' : ` (${sipFark} gün)`}</span></p>
         </div>
         <div class="vrd-eylemler">
+          <button class="btn btn-ikincil" type="button" data-eylem="depo" aria-expanded="${depoAcik}">${i('stok')}Depo sayımı${dOz && dOz.bekleyen ? ` <span class="rozet rozet-uyari">${dOz.bekleyen} fark</span>` : ''}</button>
           <button class="btn btn-altin" type="button" data-eylem="siparis" aria-expanded="${siparisAcik}">${i('gonder')}Sipariş listesi</button>
         </div>
       </div>
@@ -160,6 +186,7 @@
       ${acilSayimDurumu() && say.sayilmadi !== veri.kalemler.length ? `<div class="uyari uyari-uyari" role="status">${i('kalender')}<div><div class="uyari__baslik">Acil arabası aylık sayımı bekliyor</div><div class="uyari__metin">${acilSayimDurumu()} Sayımı “Acil arabası” sekmesinden girin.</div></div></div>` : ''}
       ${say.sayilmadi === veri.kalemler.length ? `<div class="uyari uyari-bilgi" role="status">${i('bilgi')}<div><div class="uyari__baslik">İlk sayımı yapın</div><div class="uyari__metin">Her kalem için mevcut miktarı, alt sınırı ve haftalık hedefi girin. Kullanmadığınız kalemleri × ile çıkarın. Sipariş önerisi hedefe tamamlayacak şekilde hesaplanır.</div></div></div>` : ''}
 
+      ${depoAcik ? depoCiz(dOz) : ''}
       ${siparisAcik ? `
       <section class="kart kart-premium" aria-label="Sipariş listesi">
         <div class="kart__bas"><h2 class="kart__baslik">${i('gonder')}Haftalık sipariş listesi</h2>
@@ -216,6 +243,69 @@
       <p class="metin-xs metin-soluk">Başlangıç listesi karma servis için önerilmiştir; gerçek listenize göre düzenleyin. Veriler bu cihazın tarayıcısında saklanır.</p>`;
   }
 
+  function depoCiz(o) {
+    const dosya = `<label class="btn btn-ikincil btn-sm" for="depo-dosya">${i('arti', 'ikon-sm')}${depo ? 'Yeni sayım dosyası yükle' : 'Sayım dosyası yükle'}</label>
+      <input id="depo-dosya" class="sr-only" type="file" data-depo-dosya>`;
+    const mesaj = depoMesaj ? `<p class="metin-sm" role="status">${esc(depoMesaj)}</p>` : '';
+    if (!depo) return `<section class="kart kart-premium" aria-label="Depo sayımı"><div class="kart__bas"><h2 class="kart__baslik">${i('stok')}Depo sayımı</h2>
+      <button class="btn btn-hayalet btn-ikon btn-sm" type="button" data-eylem="depo" aria-label="Kapat">${i('kapat', 'ikon-sm')}</button></div>
+      <div class="kart__govde">${mesaj}<p class="metin-sm metin-ikincil">Kağıt sayım listesinden hazırlanan dosyayı yükleyin. Her kalemde sayılan miktar ile sistemdeki miktar karşılaştırılır, fark stok listesinde de görünür.</p><div class="vrd-adaylar">${dosya}</div></div></section>`;
+    const sat = depo.satirlar.map((r, j) => ({ r, j, d: depoFark(r) })).filter(({ d }) =>
+      depoFiltre === 'tum' ? true : depoFiltre === 'yok' ? !d : d && d.f !== 0);
+    if (depoFiltre === 'fark') sat.sort((a, b) => a.d.f - b.d.f);
+    const satir = ({ r, j, d }) => {
+      const k = d ? d.k : depoKalem(r);
+      return `<tr class="${r.islendi ? 'st-depo-islendi' : ''}">
+        <td data-etiket="Kalem"><strong>${esc(r.ad)}</strong>${r.supheli ? ' <span class="rozet rozet-uyari st-acil" title="El yazısı net okunamadı, kontrol edin">okuma kontrol</span>' : ''}
+          <span class="metin-xs metin-soluk">${k ? esc(k.ad) : 'Stok listesinde karşılığı yok'}${r.not ? ' · ' + esc(r.not) : ''}</span></td>
+        <td data-etiket="Sistem" class="sayi">${d ? d.sis : (k && k.mevcut != null ? k.mevcut : '—')}</td>
+        <td data-etiket="Sayılan" class="sayi"><label class="sr-only" for="ds-${j}">${esc(r.ad)} sayılan</label><input id="ds-${j}" class="girdi st-sayi" type="number" inputmode="numeric" min="0" data-depo-say="${j}" value="${r.sayilan == null ? '' : r.sayilan}"${r.islendi ? ' disabled' : ''}></td>
+        <td data-etiket="Fark" class="sayi"><strong class="${!d ? 'metin-soluk' : d.f < 0 ? 'st-fark-eksik' : d.f > 0 ? 'st-fark-fazla' : 'metin-soluk'}">${d ? isaretli(d.f) : '—'}</strong></td>
+        <td data-etiket="" class="st-sil">${r.islendi ? `<span class="rozet rozet-basari">${i('onay')}İşlendi</span>` : d && d.f ? `<button class="btn btn-ikincil btn-sm" type="button" data-depo-isle="${j}">Stoğa işle</button>` : ''}</td></tr>`;
+    };
+    return `<section class="kart kart-premium" aria-label="Depo sayımı">
+      <div class="kart__bas"><h2 class="kart__baslik">${i('stok')}Depo sayımı · ${uzunTarih(depo.tarih)}</h2>
+        <button class="btn btn-hayalet btn-ikon btn-sm" type="button" data-eylem="depo" aria-label="Kapat">${i('kapat', 'ikon-sm')}</button></div>
+      <div class="kart__govde">
+        ${mesaj}
+        <div class="st-depo-ozet">
+          <span><strong class="st-fark-eksik">${o.eksik}</strong> eksik</span><span><strong class="st-fark-fazla">${o.fazla}</strong> fazla</span>
+          <span><strong>${o.esit}</strong> tutuyor</span><span><strong class="metin-soluk">${o.yok}</strong> karşılaştırılamadı</span>
+        </div>
+        <p class="metin-xs metin-ikincil">Fark = sayılan − sistem. Eksi: depoda sistemdekinden az var. “Stoğa işle” mevcut miktarı sayılanla değiştirir.</p>
+        <div class="st-filtre" role="group" aria-label="Depo sayımı filtresi">
+          ${[['fark', 'Farklı olanlar'], ['tum', 'Tümü'], ['yok', 'Karşılaştırılamayan']].map(([f, a]) => `<button class="sekme" type="button" data-depo-filtre="${f}" aria-pressed="${depoFiltre === f}">${a}</button>`).join('')}
+        </div>
+        <div class="tablo-sarici"><table class="tablo tablo-mobil st-tablo st-depo">
+          <thead><tr><th>Kalem</th><th class="sayi">Sistem</th><th class="sayi">Sayılan</th><th class="sayi">Fark</th><th><span class="sr-only">İşlem</span></th></tr></thead>
+          <tbody>${sat.map(satir).join('') || '<tr><td colspan="5"><p class="metin-sm metin-soluk" style="padding:12px 0">Bu filtrede kalem yok.</p></td></tr>'}</tbody></table></div>
+      </div>
+      <div class="kart__alt vrd-alt">
+        <span class="vrd-eylemler">${dosya}<button class="btn btn-ikincil btn-sm" type="button" data-eylem="depo-kopyala">${i('gonder', 'ikon-sm')}${depoKopya || 'Fark listesini kopyala'}</button></span>
+        <span class="vrd-eylemler">${o.bekleyen ? (depoIsleSor
+          ? `<span class="vrd-onay"><span class="metin-xs">${o.bekleyen} kalemin mevcudu sayılanla değişecek.</span><button class="btn btn-birincil btn-sm" type="button" data-eylem="depo-isle-evet">Onayla</button><button class="btn btn-hayalet btn-sm" type="button" data-eylem="depo-isle-hayir">Vazgeç</button></span>`
+          : `<button class="btn btn-birincil btn-sm" type="button" data-eylem="depo-isle">${i('onay', 'ikon-sm')}Tüm farkları stoğa işle</button>`) : ''}
+          ${depoSilSor ? `<span class="vrd-onay"><button class="btn btn-tehlike btn-sm" type="button" data-eylem="depo-sil-evet">Sayımı sil</button><button class="btn btn-hayalet btn-sm" type="button" data-eylem="depo-sil-hayir">Vazgeç</button></span>`
+            : `<button class="btn btn-hayalet btn-sm" type="button" data-eylem="depo-sil">Sayımı kaldır</button>`}</span>
+      </div></section>`;
+  }
+  function depoMetni() {
+    const s = [`14. Kat · Depo sayımı farkları · ${uzunTarih(depo.tarih)}`, '(fark = sayılan − sistem)', ''];
+    let g = '';
+    const sira = ['Sarf', 'Serum', 'İlaç'];
+    depo.satirlar.map(r => ({ r, d: depoFark(r) })).filter(x => x.d && x.d.f)
+      .sort((a, b) => (sira.indexOf(a.r.grup) - sira.indexOf(b.r.grup)) || (a.d.f - b.d.f))
+      .forEach(({ r, d }) => { if (r.grup !== g) { g = r.grup; s.push(`${g}:`); } s.push(`  • ${r.ad}: sistem ${d.sis}, sayılan ${r.sayilan} → ${isaretli(d.f)}`); });
+    const yok = depo.satirlar.filter(r => !depoFark(r));
+    if (yok.length) { s.push('', 'Karşılaştırılamayan:'); yok.forEach(r => s.push(`  • ${r.ad}: sayılan ${r.sayilan}${r.not ? ' (' + r.not + ')' : ''}`)); }
+    return s.join('\n');
+  }
+  function depoIsle(r) {
+    const d = depoFark(r); if (!d || !d.f || r.islendi) return;
+    hareket(d.k, 'depo', d.k.mevcut, r.sayilan); r.islendi = { once: d.k.mevcut, t: bugun() };
+    d.k.mevcut = r.sayilan; d.k.sayim = bugun();
+  }
+
   function siparisMetni() {
     const satir = [`14. Kat · Haftalık malzeme siparişi · ${uzunTarih(bugun())}`, ''];
     let kat = '';
@@ -250,6 +340,23 @@
       const sonraki = hepsi[j + 1];
       if (sonraki) sonraki.focus(); else inp.blur();
     });
+    on('[data-depo-filtre]', 'click', b => { depoFiltre = b.dataset.depoFiltre; yenile(`[data-depo-filtre="${depoFiltre}"]`); });
+    on('[data-depo-say]', 'change', inp => { const r = depo.satirlar[+inp.dataset.depoSay]; r.sayilan = inp.value === '' ? null : Math.max(0, Math.round(+inp.value)); r.supheli = false; depoKaydet(); depoKopya = ''; setTimeout(() => { const a = document.activeElement; yenile(a && a !== document.body && a.id ? `#${a.id}` : null); }, 0); });
+    on('[data-depo-isle]', 'click', b => { depoIsle(depo.satirlar[+b.dataset.depoIsle]); kaydet(); depoKaydet(); yenile('[data-eylem="depo"]'); });
+    on('[data-depo-dosya]', 'change', inp => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const j = JSON.parse(r.result), d = j && j.veri ? j.veri[DEPO] : j;
+          if (!d || !Array.isArray(d.satirlar)) throw new Error();
+          depo = d; depoKaydet(); depoFiltre = 'fark'; depoIsleSor = depoSilSor = false; depoKopya = '';
+          const o = depoOzet(); depoMesaj = `${d.satirlar.length} kalem yüklendi: ${o.eksik} eksik, ${o.fazla} fazla, ${o.esit} tutuyor.`;
+        } catch (e) { depoMesaj = 'Bu dosya depo sayımı dosyası değil.'; }
+        yenile('[data-eylem="depo"]');
+      };
+      r.readAsText(f);
+    });
     on('[data-kat]', 'click', b => { filtre.kat = b.dataset.kat; yenile(`[data-kat="${b.dataset.kat}"]`); });
     on('[data-grup]', 'click', b => { filtre.grup = b.dataset.grup; filtre.kat = ''; filtre.ara = ''; acikKalem = null; yenile(`[data-grup="${b.dataset.grup}"]`); });
     on('[data-ac-kalem]', 'click', b => { acikKalem = acikKalem === b.dataset.acKalem ? null : b.dataset.acKalem; silSor = null; yenile(acikKalem ? `#min-${acikKalem}` : `[data-ac-kalem="${b.dataset.acKalem}"]`); });
@@ -273,6 +380,14 @@
     on('[data-eylem]', 'click', b => {
       const e = b.dataset.eylem;
       if (e === 'siparis') { siparisAcik = !siparisAcik; siparisTaslak = null; kopyaDurum = ''; yenile('[data-eylem="siparis"]'); }
+      if (e === 'depo') { depoAcik = !depoAcik; depoMesaj = ''; depoIsleSor = depoSilSor = false; yenile('[data-eylem="depo"]'); }
+      if (e === 'depo-isle') { depoIsleSor = true; yenile('[data-eylem="depo-isle-evet"]'); }
+      if (e === 'depo-isle-hayir') { depoIsleSor = false; yenile(); }
+      if (e === 'depo-isle-evet') { let n = 0; depo.satirlar.forEach(r => { const d = depoFark(r); if (d && d.f && !r.islendi) { depoIsle(r); n++; } }); depoIsleSor = false; depoMesaj = `${n} kalemin mevcudu sayılan miktarla güncellendi.`; kaydet(); depoKaydet(); yenile(); }
+      if (e === 'depo-sil') { depoSilSor = true; yenile('[data-eylem="depo-sil-hayir"]'); }
+      if (e === 'depo-sil-hayir') { depoSilSor = false; yenile(); }
+      if (e === 'depo-sil-evet') { depo = null; depoSilSor = false; depoMesaj = 'Depo sayımı kaldırıldı. Stok miktarları değişmedi.'; depoKaydet(); yenile(); }
+      if (e === 'depo-kopyala') { const bitti = (ok) => { depoKopya = ok ? 'Kopyalandı' : 'Kopyalanamadı'; yenile('[data-eylem="depo-kopyala"]'); }; try { navigator.clipboard.writeText(depoMetni()).then(() => bitti(true), () => bitti(false)); } catch (x) { bitti(false); } }
       if (e === 'ekle') { ekleAcik = !ekleAcik; yenile(ekleAcik ? '#y-ad' : '[data-eylem="ekle"]'); }
       if (e === 'kopyala') {
         el.querySelectorAll('[data-sp]').forEach(inp => { siparisTaslak[inp.dataset.sp] = Math.max(0, Math.round(+inp.value || 0)); });

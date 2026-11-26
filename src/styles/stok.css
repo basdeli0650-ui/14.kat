@@ -74,3 +74,23 @@ button.st-ad:hover strong { color: var(--renk-mor-metin); }
   .st-tablo tr.acik td.st-sil { display: flex; position: static; grid-column: 3; grid-row: 3; align-self: end; justify-content: flex-end; }
   .st-tablo .rozet { font-size: 11px; padding: 2px 8px; }
 }
+
+/* Depo sayımı */
+.st-depo-ozet { display: flex; flex-wrap: wrap; gap: var(--b-2) var(--b-5); font-size: var(--yazi-sm); margin-bottom: var(--b-2); }
+.st-depo-ozet strong { font-size: var(--yazi-lg); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.st-fark-eksik { color: var(--renk-kritik); }
+.st-fark-fazla { color: var(--renk-uyari); }
+.st-depo td[data-etiket="Kalem"] { display: flex; flex-direction: column; gap: 2px; }
+.st-depo .st-depo-islendi { opacity: .72; }
+.kart__govde > .st-filtre { margin-bottom: var(--b-2); }
+@media (max-width: 640px) {
+  .st-tablo.st-depo tr { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: var(--b-2) var(--b-4); }
+  .st-tablo.st-depo td[data-etiket="Kalem"] { grid-column: 1 / -1; grid-row: 1; padding-right: 0; }
+  .st-tablo.st-depo td[data-etiket="Sistem"], .st-tablo.st-depo td[data-etiket="Sayılan"], .st-tablo.st-depo td[data-etiket="Fark"] { display: flex; grid-row: 2; grid-column: auto; }
+  .st-tablo.st-depo td[data-etiket="Sistem"]::before, .st-tablo.st-depo td[data-etiket="Sayılan"]::before { content: attr(data-etiket); }
+  .st-tablo.st-depo td.st-sil { display: flex; position: static; grid-column: 1 / -1; grid-row: 3; justify-content: flex-start; }
+  .st-tablo.st-depo td.st-sil:empty { display: none; }
+  .st-tablo.st-depo td[data-etiket="Kalem"]::before { content: none; }
+  .st-tablo.st-depo td.sayi { align-items: center; justify-content: flex-end; text-align: center; }
+  .st-tablo.st-depo td.st-sil .btn { width: auto; }
+}

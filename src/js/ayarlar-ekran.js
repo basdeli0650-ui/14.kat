@@ -88,7 +88,7 @@
   function ayar() { try { return JSON.parse(oku(AYAR)) || {}; } catch (e) { return {}; } }
   function sonYedekGun() { const a = ayar(); if (!a.sonYedek) return null; return Math.round((Date.parse(iso(new Date())) - Date.parse(a.sonYedek)) / 864e5); }
 
-  const MODUL = { '14kat.vardiya.v1': 'Vardiya ve personel', '14kat.gorev.v1': 'Görev dağıtımı', '14kat.ajanda.v1': 'Ajanda', '14kat.stok.v1': 'Stok ve sarf', '14kat.miat.v1': 'Miat ve sıcaklık' };
+  const MODUL = { '14kat.vardiya.v1': 'Vardiya ve personel', '14kat.gorev.v1': 'Görev dağıtımı', '14kat.ajanda.v1': 'Ajanda', '14kat.stok.v1': 'Stok ve sarf', '14kat.depoSayim.v1': 'Depo sayımı', '14kat.miat.v1': 'Miat ve sıcaklık' };
 
   function ciz() {
     const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
